@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment — NEVER commit real secrets
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+
+# Expo
+.expo/
+web-build/
+expo-env.d.ts
+
+# macOS
+.DS_Store
+
+# PDFs and docs in root (design files, receipts etc.)
+*.pdf
+*.PDF
+
+# Prisma generated
+src/generated/prisma
+
+# TypeScript
+*.tsbuildinfo

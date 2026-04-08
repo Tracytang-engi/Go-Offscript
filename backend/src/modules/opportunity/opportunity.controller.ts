@@ -1,0 +1,25 @@
+import { Request, Response, NextFunction } from 'express';
+import * as opportunityService from './opportunity.service';
+import { sendSuccess } from '../../utils/response';
+
+export const getOpportunities = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await opportunityService.seedOpportunities();
+    const rawType = req.query['type'];
+    const filter = (typeof rawType === 'string' ? rawType : 'all');
+    const page = parseInt(typeof req.query['page'] === 'string' ? req.query['page'] : '1', 10);
+    const result = await opportunityService.getOpportunities(filter, page);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getOpportunityById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const opp = await opportunityService.getOpportunityById(req.params['id'] as string);
+    sendSuccess(res, opp);
+  } catch (err) {
+    next(err);
+  }
+};

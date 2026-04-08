@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth & Identity ──────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile       UserProfile?
+  cvUploads     CvUpload[]
+  socialSignals SocialSignal[]
+  userValues    UserValue[]
+  careerPaths   CareerPath[]
+  sessions      Session[]
+  events        UserEvent[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+// ─── User Profile & Persona ───────────────────────────────────────────────────
+
+model UserProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  bio          String?
+  avatarUrl    String?
+  location     String?
+  novaPersona  Json?    // AI-generated user persona snapshot
+  onboardingDone Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// ─── CV & Skills ──────────────────────────────────────────────────────────────
+
+model CvUpload {
+  id            String        @id @default(cuid())
+  userId        String
+  fileName      String
+  fileUrl       String
+  cloudinaryId  String?
+  parsedText    String?       // raw extracted text from CV
+  status        CvStatus      @default(PROCESSING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extractedSkills ExtractedSkill[]
+
+  @@index([userId])
+  @@map("cv_uploads")
+}
+
+enum CvStatus {
+  PROCESSING
+  DONE
+  FAILED
+}
+
+model ExtractedSkill {
+  id         String   @id @default(cuid())
+  cvId       String
+  skill      String
+  confidence Float    @default(1.0) // 0-1, for future ML scoring
+  category   String?  // e.g. "technical", "soft", "domain"
+  createdAt  DateTime @default(now())
+
+  cv CvUpload @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("extracted_skills")
+}
+
+// ─── Social Signals ───────────────────────────────────────────────────────────
+
+model SocialSignal {
+  id           String       @id @default(cuid())
+  userId       String
+  platform     SocialPlatform
+  connected    Boolean      @default(false)
+  rawData      Json?        // optional scraped/provided interest data
+  summary      String?      // Nova-interpreted interest summary
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
+  @@map("social_signals")
+}
+
+enum SocialPlatform {
+  TIKTOK
+  INSTAGRAM
+  LINKEDIN
+  TWITTER
+  YOUTUBE
+}
+
+// ─── Values ───────────────────────────────────────────────────────────────────
+
+model Value {
+  id    String      @id @default(cuid())
+  key   String      @unique // e.g. "creativity"
+  label String                // e.g. "Creativity"
+  emoji String?
+
+  userValues UserValue[]
+
+  @@map("values")
+}
+
+model UserValue {
+  id        String   @id @default(cuid())
+  userId    String
+  valueId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value Value @relation(fields: [valueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, valueId])
+  @@index([userId])
+  @@map("user_values")
+}
+
+// ─── Career Paths ─────────────────────────────────────────────────────────────
+
+model CareerPath {
+  id             String   @id @default(cuid())
+  userId         String
+  primaryPath    String
+  secondaryPath  String?
+  explanation    String   // Nova's explanation text
+  tensionNote    String?  // Nova spotted a tension
+  nextActions    Json     // string[]
+  rawNovaOutput  Json?    // full Perplexity response for debugging
+  createdAt      DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pathScores   PathScore[]
+  opportunities CareerPathOpportunity[]
+
+  @@index([userId])
+  @@map("career_paths")
+}
+
+model PathScore {
+  id           String   @id @default(cuid())
+  careerPathId String
+  pathTitle    String
+  matchScore   Int      // 0-100
+  label        String?  // "your sweet spot", "strong match", "passion signal"
+  emoji        String?
+  rank         Int      @default(0)
+
+  careerPath CareerPath @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@index([careerPathId])
+  @@map("path_scores")
+}
+
+// ─── Opportunities ────────────────────────────────────────────────────────────
+
+model Opportunity {
+  id           String          @id @default(cuid())
+  title        String
+  organization String
+  description  String
+  type         OpportunityType
+  deadline     String?         // e.g. "closes May", "open now", "anytime"
+  isOpen       Boolean         @default(true)
+  url          String?
+  tags         String[]        // searchable tags
+  peerCount    Int             @default(0) // "N people like you came through this"
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  careerPaths CareerPathOpportunity[]
+
+  @@index([type])
+  @@map("opportunities")
+}
+
+enum OpportunityType {
+  INTERNSHIP
+  FELLOWSHIP
+  SHORT_PROJECT
+  COACHING
+  MEETUP
+}
+
+model CareerPathOpportunity {
+  careerPathId  String
+  opportunityId String
+  relevance     Float  @default(1.0)
+
+  careerPath  CareerPath  @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@id([careerPathId, opportunityId])
+  @@map("career_path_opportunities")
+}
+
+// ─── Mentors (TODO: Phase 2+) ─────────────────────────────────────────────────
+
+model Mentor {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  bio         String?
+  avatarUrl   String?
+  expertise   String[]
+  linkedinUrl String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // TODO: MentorSession, UserMentorMatch relations to be added later
+
+  @@map("mentors")
+}
+
+// ─── Analytics & Events ───────────────────────────────────────────────────────
+
+model UserEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  eventType String   // e.g. "cv_uploaded", "values_selected", "path_viewed"
+  payload   Json?    // flexible event data for recommendation system
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([eventType])
+  @@map("user_events")
+}
