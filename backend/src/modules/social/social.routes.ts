@@ -5,8 +5,9 @@ import { authenticate } from '../../middleware/auth';
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (_req, file, cb) => {
+  limits: { fileSize: 10 * 1024 * 1024 },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fileFilter: (_req: any, file: any, cb: any) => {
     cb(null, file.mimetype.startsWith('image/'));
   },
 });

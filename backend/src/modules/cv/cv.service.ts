@@ -3,6 +3,7 @@ import { cloudinary } from '../../config/cloudinary';
 import { env } from '../../config/env';
 import { AppError } from '../../middleware/errorHandler';
 import { Readable } from 'stream';
+import type { UploadedFile } from '../../types/multer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse');
 
@@ -60,7 +61,7 @@ const uploadToCloudinary = (
 
 export const uploadCv = async (
   userId: string,
-  file: Express.Multer.File
+  file: UploadedFile
 ): Promise<{ cvId: string; skills: string[]; fileUrl: string; parsedText: string }> => {
   // 1. Extract text from PDF
   let parsedText = '';

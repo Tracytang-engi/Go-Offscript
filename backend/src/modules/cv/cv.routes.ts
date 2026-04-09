@@ -3,13 +3,18 @@ import multer from 'multer';
 import * as cvController from './cv.controller';
 import { authenticate } from '../../middleware/auth';
 
+const ALLOWED_MIME = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (_req, file, cb) => {
-    const allowed = ['application/pdf', 'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    cb(null, allowed.includes(file.mimetype));
+  limits: { fileSize: 10 * 1024 * 1024 },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fileFilter: (_req: any, file: any, cb: any) => {
+    cb(null, ALLOWED_MIME.includes(file.mimetype));
   },
 });
 

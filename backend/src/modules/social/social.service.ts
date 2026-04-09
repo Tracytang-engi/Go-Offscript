@@ -5,6 +5,7 @@ import { SocialPlatform } from '@prisma/client';
 import { AppError } from '../../middleware/errorHandler';
 import { analyzeScreenshotWithVision } from './social.vision';
 import { Readable } from 'stream';
+import type { UploadedFile } from '../../types/multer';
 
 // Upload screenshot image to Cloudinary
 const uploadScreenshot = (
@@ -29,7 +30,7 @@ const uploadScreenshot = (
 export const saveScreenshotSignal = async (
   userId: string,
   platform: SocialPlatform,
-  imageFile?: Express.Multer.File,
+  imageFile?: UploadedFile,
   manualDescription?: string
 ) => {
   if (!Object.values(SocialPlatform).includes(platform)) {
