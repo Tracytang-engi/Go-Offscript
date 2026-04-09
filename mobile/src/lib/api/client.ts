@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Option A (tunnel / current):  https://gooffscript.loca.lt/api
 // Option B (LAN):               http://10.228.2.85:3000/api
 // Option C (Render, permanent): https://your-render-app.onrender.com/api
-export const API_BASE_URL = 'http://10.228.2.85:3000/api';
+export const API_BASE_URL = 'https://go-off-script-api.onrender.com/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
