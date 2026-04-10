@@ -165,6 +165,21 @@ export const opportunityApi = {
   },
 };
 
+// POST /opportunities/search — asks Perplexity for real current opps based on user's path
+export const searchOpportunities = async (): Promise<{
+  opportunities: Opportunity[];
+  isReal: boolean;
+}> => {
+  try {
+    const r = await apiClient.post<ApiResponse<{ opportunities: Opportunity[]; isReal: boolean }>>(
+      '/opportunities/search'
+    );
+    return r.data.data;
+  } catch {
+    return { opportunities: MOCK_OPPORTUNITIES, isReal: false };
+  }
+};
+
 const filterMockOpps = (filter: string): Opportunity[] => {
   const types = FILTER_MAP[filter] ?? FILTER_MAP.all;
   return MOCK_OPPORTUNITIES.filter((o) => types.includes(o.type));

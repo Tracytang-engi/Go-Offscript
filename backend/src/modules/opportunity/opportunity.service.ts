@@ -1,6 +1,7 @@
 import { prisma } from '../../config/prisma';
 import { OpportunityType } from '@prisma/client';
 import { AppError } from '../../middleware/errorHandler';
+import { searchOpportunitiesWithAI } from './opportunity.search';
 
 const TYPE_FILTER_MAP: Record<string, OpportunityType[]> = {
   all: Object.values(OpportunityType),
@@ -30,6 +31,71 @@ export const getOpportunityById = async (id: string) => {
   const opp = await prisma.opportunity.findUnique({ where: { id } });
   if (!opp) throw new AppError('Opportunity not found', 404);
   return opp;
+};
+
+// ─── AI-powered real opportunity search ──────────────────────────────────────
+
+export const searchAndStoreOpportunities = async (userId: string): Promise<{
+  opportunities: Awaited<ReturnType<typeof prisma.opportunity.findMany>>;
+  isReal: boolean;
+}> => {
+  // Get user's career path, skills, and values for context
+  const [latestPath, cvUpload, userValues] = await Promise.all([
+    prisma.careerPath.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.cvUpload.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { extractedSkills: true },
+    }),
+    prisma.userValue.findMany({ where: { userId }, include: { value: true } }),
+  ]);
+
+  const primaryPath = latestPath?.primaryPath ?? 'general career exploration';
+  const skills = cvUpload?.extractedSkills.map((s) => s.skill) ?? [];
+  const values = userValues.map((uv) => uv.value.key);
+
+  // Call Perplexity to find real opportunities
+  const searched = await searchOpportunitiesWithAI({ primaryPath, skills, values });
+
+  if (searched.length === 0) {
+    // Fallback to seeded opportunities
+    await seedOpportunities();
+    const opps = await prisma.opportunity.findMany({
+      where: { isOpen: true },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    });
+    return { opportunities: opps, isReal: false };
+  }
+
+  // Store new opportunities and link to career path
+  const stored = await Promise.all(
+    searched.map((opp) =>
+      prisma.opportunity.create({
+        data: {
+          title: opp.title,
+          organization: opp.organization,
+          description: opp.description,
+          type: opp.type,
+          deadline: opp.deadline ?? undefined,
+          url: opp.url ?? undefined,
+          isOpen: true,
+          tags: opp.tags,
+          peerCount: Math.floor(Math.random() * 15) + 1,
+          ...(latestPath ? {
+            careerPaths: {
+              create: { careerPathId: latestPath.id },
+            },
+          } : {}),
+        },
+      })
+    )
+  );
+
+  return { opportunities: stored, isReal: true };
 };
 
 // Seed some example opportunities for development

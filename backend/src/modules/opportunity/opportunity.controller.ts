@@ -23,3 +23,18 @@ export const getOpportunityById = async (req: Request, res: Response, next: Next
     next(err);
   }
 };
+
+// POST /api/opportunities/search
+// Calls Perplexity to find real current opportunities based on the user's career path
+export const searchOpportunities = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const result = await opportunityService.searchAndStoreOpportunities(userId);
+    sendSuccess(res, result, result.isReal
+      ? 'Found real opportunities for your path'
+      : 'Showing curated opportunities'
+    );
+  } catch (err) {
+    next(err);
+  }
+};

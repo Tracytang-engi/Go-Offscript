@@ -76,6 +76,7 @@ export interface Opportunity {
   type: OpportunityType;
   deadline?: string;
   isOpen: boolean;
+  url?: string | null;     // real application link
   tags: string[];
   peerCount: number;
 }
