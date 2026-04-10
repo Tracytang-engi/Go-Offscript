@@ -81,6 +81,16 @@ export interface Opportunity {
   peerCount: number;
 }
 
+export interface Mentor {
+  id: string;
+  name: string;
+  title: string;           // "Senior Designer @ Google"
+  bio: string;
+  expertise: string[];
+  linkedinUrl?: string | null;
+  avatarUrl?: string | null;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;

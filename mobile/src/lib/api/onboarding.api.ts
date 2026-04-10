@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { MOCK_VALUES, MOCK_PATH, MOCK_OPPORTUNITIES } from './mock';
-import type { ApiResponse, Value, CareerPath, Opportunity } from '../../types';
+import type { ApiResponse, Value, CareerPath, Opportunity, Mentor } from '../../types';
 
 // ─── Values ───────────────────────────────────────────────────────────────────
 
@@ -178,6 +178,21 @@ export const searchOpportunities = async (): Promise<{
   } catch {
     return { opportunities: MOCK_OPPORTUNITIES, isReal: false };
   }
+};
+
+// ─── Mentors1 ─────────────────────────────────────────────────────────────────
+
+export const mentorApi = {
+  search: async (): Promise<{ mentors: Mentor[]; isReal: boolean }> => {
+    try {
+      const r = await apiClient.post<ApiResponse<{ mentors: Mentor[]; isReal: boolean }>>(
+        '/mentors/search'
+      );
+      return r.data.data;
+    } catch {
+      return { mentors: [], isReal: false };
+    }
+  },
 };
 
 const filterMockOpps = (filter: string): Opportunity[] => {

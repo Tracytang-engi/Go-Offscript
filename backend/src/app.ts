@@ -13,6 +13,7 @@ import valuesRoutes from './modules/values/values.routes';
 import pathRoutes from './modules/path/path.routes';
 import opportunityRoutes from './modules/opportunity/opportunity.routes';
 import novaRoutes from './modules/nova/nova.routes';
+import mentorRoutes from './modules/mentor/mentor.routes';
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/api/values', valuesRoutes);
 app.use('/api/path', pathRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/nova', novaRoutes);
+app.use('/api/mentors', mentorRoutes);
 
 app.use(errorHandler);
 
