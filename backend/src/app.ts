@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { errorHandler } from './middleware/errorHandler';
+import { cloudinary } from './config/cloudinary';
 import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import cvRoutes from './modules/cv/cv.routes';
@@ -22,6 +23,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', app: 'Go Off Script API' }));
+
+app.get('/health/cloudinary', async (_req, res) => {
+  try {
+    const result = await cloudinary.api.ping();
+    res.json({ status: 'ok', cloudinary: result });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: (err as Error).message });
+  }
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
