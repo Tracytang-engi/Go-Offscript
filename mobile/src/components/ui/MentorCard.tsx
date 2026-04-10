@@ -16,7 +16,10 @@ export const MentorCard = ({ mentor }: MentorCardProps) => {
     .slice(0, 2);
 
   const handleChat = () => {
-    const url = mentor.linkedinUrl ?? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(mentor.name)}`;
+    // linkedinUrl is always a LinkedIn people search URL (name + title + company)
+    // so this will always open a real, working page
+    const url = mentor.linkedinUrl
+      ?? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(mentor.name)}`;
     Linking.openURL(url).catch(() => {});
   };
 
@@ -115,7 +118,7 @@ export const MentorCard = ({ mentor }: MentorCardProps) => {
         }}
       >
         <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.white }}>
-          chat on LinkedIn →
+          find on LinkedIn →
         </Text>
       </TouchableOpacity>
     </View>

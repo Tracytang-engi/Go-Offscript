@@ -13,30 +13,31 @@ export interface SearchedOpportunity {
   tags: string[];
 }
 
-const SYSTEM_PROMPT = `You are an opportunity researcher. Your job is to find REAL, CURRENTLY OPEN opportunities that match a career profile.
+const SYSTEM_PROMPT = `You are an opportunity researcher. Find REAL, CURRENTLY OPEN opportunities that are a precise match for a specific target role.
 
 Rules:
-- Only return real organizations that actually exist
-- Only return opportunities that are real and currently open or regularly available
-- Include real application URLs where possible
-- Be specific — use real program names, not generic descriptions
-- Return ONLY valid JSON, no markdown, no preamble
+- Every result must directly relate to the target roles listed — no generic opportunities
+- Only return real organizations and real programs that exist
+- Include real application or information URLs where possible
+- Descriptions must say WHY this fits the specific role (not just what the org does)
+- Return ONLY valid JSON, no markdown, no preamble.
 
 Output format (strict JSON array):
 [
   {
-    "title": "specific program/role name",
+    "title": "exact program / role / event name",
     "organization": "real organization name",
-    "description": "1-2 sentences — what it is and why it fits this profile",
+    "description": "1-2 sentences: what it is AND why it matches the target role",
     "type": "INTERNSHIP | FELLOWSHIP | SHORT_PROJECT | COACHING | MEETUP",
     "deadline": "e.g. 'rolling', 'closes June 2025', 'annual — opens September', or null",
-    "url": "real application or info URL, or null if unknown",
+    "url": "real application or info URL, or null if uncertain",
     "tags": ["tag1", "tag2", "tag3"]
   }
 ]`;
 
 export const searchOpportunitiesWithAI = async (input: {
   primaryPath: string;
+  pathTitles?: string[];
   skills: string[];
   values: string[];
   location?: string;
@@ -46,21 +47,30 @@ export const searchOpportunitiesWithAI = async (input: {
     return [];
   }
 
-  const userPrompt = `Find 8 real, currently available opportunities for someone with this profile:
+  // Build a focused role description from all path titles Nova generated
+  const roleLines = (input.pathTitles ?? [input.primaryPath])
+    .filter(Boolean)
+    .map((t) => `  - ${t}`)
+    .join('\n');
 
-Career Path: ${input.primaryPath}
-Skills: ${input.skills.slice(0, 10).join(', ') || 'general'}
-Values: ${input.values.join(', ') || 'growth, impact'}
-Location: ${input.location ?? 'UK / remote-friendly'}
+  const userPrompt = `Find 9 real, currently available opportunities for someone pursuing these SPECIFIC career paths:
 
-Include a mix of:
-- 3 internships or entry-level programs (paid preferred)
-- 2 fellowships or funded programs
-- 1 short project or competition
-- 1 coaching or mentorship program
-- 1 community meetup or network
+Target Roles (use these exactly to anchor every result):
+${roleLines}
 
-Focus on real programs at real organizations that genuinely match this career path. Include real application URLs.`;
+Supporting Context:
+- Skills: ${input.skills.slice(0, 10).join(', ') || 'not specified'}
+- Values: ${input.values.join(', ') || 'growth, impact'}
+- Location: ${input.location ?? 'UK / remote-friendly'}
+
+Every opportunity must be directly relevant to at least one of the target roles above. Include:
+- 3 internships or entry programs in these exact fields (paid preferred)
+- 2 fellowships or funded programs directly in these fields
+- 1 short project, competition, or portfolio challenge
+- 2 coaching or mentorship programs specific to these roles
+- 1 community, meetup, or network for people in these fields
+
+No generic results. Each result must name the specific role or industry it serves.`;
 
   try {
     const response = await fetch(PERPLEXITY_API_URL, {
@@ -71,12 +81,12 @@ Focus on real programs at real organizations that genuinely match this career pa
         ...(env.PERPLEXITY_GROUP_ID ? { 'X-Group-Id': env.PERPLEXITY_GROUP_ID } : {}),
       },
       body: JSON.stringify({
-        model: 'sonar-pro',   // has real-time web search
+        model: 'sonar-pro',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.3,    // lower = more factual
+        temperature: 0.2,
         max_tokens: 3000,
       }),
     });
@@ -92,7 +102,6 @@ Focus on real programs at real organizations that genuinely match this career pa
 
     const parsed = JSON.parse(cleaned) as SearchedOpportunity[];
 
-    // Validate and normalize types
     const validTypes = Object.values(OpportunityType);
     return parsed
       .filter((o) => o.title && o.organization)

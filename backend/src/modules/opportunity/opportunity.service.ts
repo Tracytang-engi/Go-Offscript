@@ -39,11 +39,12 @@ export const searchAndStoreOpportunities = async (userId: string): Promise<{
   opportunities: Awaited<ReturnType<typeof prisma.opportunity.findMany>>;
   isReal: boolean;
 }> => {
-  // Get user's career path, skills, and values for context
+  // Get user's career path (with all path scores), skills, and values
   const [latestPath, cvUpload, userValues] = await Promise.all([
     prisma.careerPath.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      include: { pathScores: { orderBy: { rank: 'asc' } } },
     }),
     prisma.cvUpload.findFirst({
       where: { userId },
@@ -53,12 +54,14 @@ export const searchAndStoreOpportunities = async (userId: string): Promise<{
     prisma.userValue.findMany({ where: { userId }, include: { value: true } }),
   ]);
 
-  const primaryPath = latestPath?.primaryPath ?? 'general career exploration';
+  // Build a list of all path titles Nova generated (e.g. "UX Designer @ fintech startups")
+  const pathTitles = latestPath?.pathScores.map((s) => s.pathTitle) ?? [];
+  const primaryPath = latestPath?.primaryPath ?? pathTitles[0] ?? 'general career exploration';
   const skills = cvUpload?.extractedSkills.map((s) => s.skill) ?? [];
   const values = userValues.map((uv) => uv.value.key);
 
-  // Call Perplexity to find real opportunities
-  const searched = await searchOpportunitiesWithAI({ primaryPath, skills, values });
+  // Call Perplexity to find real opportunities anchored on exact path titles
+  const searched = await searchOpportunitiesWithAI({ primaryPath, pathTitles, skills, values });
 
   if (searched.length === 0) {
     // Fallback to seeded opportunities

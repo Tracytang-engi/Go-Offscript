@@ -1,9 +1,13 @@
 import { prisma } from '../../config/prisma';
-import { searchMentorsWithAI } from './mentor.search';
+import { searchMentorsWithAI, buildLinkedInSearchUrl } from './mentor.search';
 
 export const searchAndStoreMentors = async (userId: string) => {
   const [latestPath, cvUpload, userValues] = await Promise.all([
-    prisma.careerPath.findFirst({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+    prisma.careerPath.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { pathScores: { orderBy: { rank: 'asc' } } },
+    }),
     prisma.cvUpload.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -12,40 +16,43 @@ export const searchAndStoreMentors = async (userId: string) => {
     prisma.userValue.findMany({ where: { userId }, include: { value: true } }),
   ]);
 
-  const primaryPath = latestPath?.primaryPath ?? 'general career exploration';
+  const pathTitles = latestPath?.pathScores.map((s) => s.pathTitle) ?? [];
+  const primaryPath = latestPath?.primaryPath ?? pathTitles[0] ?? 'general career exploration';
   const skills = cvUpload?.extractedSkills.map((s) => s.skill) ?? [];
   const values = userValues.map((uv) => uv.value.key);
 
-  const found = await searchMentorsWithAI({ primaryPath, skills, values });
+  const found = await searchMentorsWithAI({ primaryPath, pathTitles, skills, values });
 
   if (found.length === 0) {
-    // Return any existing mentors in DB
     const existing = await prisma.mentor.findMany({ where: { isActive: true }, take: 5 });
     return { mentors: existing, isReal: false };
   }
 
-  // Store mentors (upsert by name to avoid duplicates across searches)
+  // Store mentors — build LinkedIn search URL from name + title + company (never hallucinated)
   const stored = await Promise.all(
-    found.map((m) =>
-      prisma.mentor.upsert({
-        where: { id: `search-${m.name.toLowerCase().replace(/\s+/g, '-')}` },
+    found.map((m) => {
+      const linkedinUrl = buildLinkedInSearchUrl(m.name, m.title, m.company);
+      const mentorId = `search-${m.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+
+      return prisma.mentor.upsert({
+        where: { id: mentorId },
         create: {
-          id: `search-${m.name.toLowerCase().replace(/\s+/g, '-')}`,
+          id: mentorId,
           name: m.name,
           title: `${m.title} @ ${m.company}`,
           bio: m.bio,
           expertise: m.expertise,
-          linkedinUrl: m.linkedinUrl ?? undefined,
+          linkedinUrl,
           isActive: true,
         },
         update: {
           title: `${m.title} @ ${m.company}`,
           bio: m.bio,
           expertise: m.expertise,
-          linkedinUrl: m.linkedinUrl ?? undefined,
+          linkedinUrl,
         },
-      })
-    )
+      });
+    })
   );
 
   return { mentors: stored, isReal: true };
