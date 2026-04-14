@@ -38,6 +38,7 @@ Output format (strict JSON array):
 export const searchOpportunitiesWithAI = async (input: {
   primaryPath: string;
   pathTitles?: string[];
+  targetCareer?: string;
   skills: string[];
   values: string[];
   location?: string;
@@ -47,8 +48,12 @@ export const searchOpportunitiesWithAI = async (input: {
     return [];
   }
 
-  // Build a focused role description from all path titles Nova generated
-  const roleLines = (input.pathTitles ?? [input.primaryPath])
+  // If user selected a specific career from swipe, use it exclusively
+  const targetTitles = input.targetCareer
+    ? [input.targetCareer]
+    : (input.pathTitles ?? [input.primaryPath]);
+
+  const roleLines = targetTitles
     .filter(Boolean)
     .map((t) => `  - ${t}`)
     .join('\n');

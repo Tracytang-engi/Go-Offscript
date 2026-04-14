@@ -65,6 +65,7 @@ export const callNovaAgent = async (input: NovaInput): Promise<NovaOutput> => {
     values: input.values,
     socialSignals: input.socialSignals ?? [],
     cvSummary: input.cvSummary,
+    chatSummary: input.chatSummary,
   });
 
   const response = await fetch(PERPLEXITY_API_URL, {

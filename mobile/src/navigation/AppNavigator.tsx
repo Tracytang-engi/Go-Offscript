@@ -9,6 +9,7 @@ import { RegisterScreen } from '../screens/RegisterScreen';
 import { UploadScreen } from '../screens/UploadScreen';
 import { ValuesScreen } from '../screens/ValuesScreen';
 import { PathScreen } from '../screens/PathScreen';
+import { NovaChatScreen } from '../screens/NovaChatScreen';
 import { WaysInScreen } from '../screens/WaysInScreen';
 import { Colors } from '../constants/colors';
 
@@ -29,6 +30,7 @@ export const AppNavigator = () => (
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Upload" component={UploadScreen} />
       <Stack.Screen name="Values" component={ValuesScreen} />
+      <Stack.Screen name="NovaChat" component={NovaChatScreen} />
       <Stack.Screen name="Path" component={PathScreen} />
       <Stack.Screen name="WaysIn" component={WaysInScreen} />
     </Stack.Navigator>

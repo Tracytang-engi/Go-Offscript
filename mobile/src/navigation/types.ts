@@ -4,6 +4,7 @@ export type RootStackParamList = {
   Register: undefined;
   Upload: undefined;
   Values: undefined;
+  NovaChat: undefined;
   Path: undefined;
   WaysIn: undefined;
 };

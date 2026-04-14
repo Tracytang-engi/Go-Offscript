@@ -5,6 +5,7 @@ import { authenticate } from '../../middleware/auth';
 const router = Router();
 router.use(authenticate);
 
+router.post('/profile', novaController.generateProfile);
 router.post('/analyze', novaController.analyze);
 router.post('/chat', novaController.chat);
 

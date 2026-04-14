@@ -7,6 +7,8 @@ export interface PathItem {
   title: string;
   description: string;
   matchScore: number; // 0-100
+  skillsAlreadyHave?: string[];
+  skillsGap?: string[];
 }
 
 export interface NovaInput {
@@ -15,6 +17,7 @@ export interface NovaInput {
   values: string[];
   socialSignals?: SocialSignalItem[];
   cvSummary?: string;
+  chatSummary?: string;
 }
 
 export interface NovaOutput {

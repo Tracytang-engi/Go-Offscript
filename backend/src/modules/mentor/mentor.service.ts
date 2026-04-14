@@ -1,7 +1,7 @@
 import { prisma } from '../../config/prisma';
 import { searchMentorsWithAI, buildLinkedInSearchUrl } from './mentor.search';
 
-export const searchAndStoreMentors = async (userId: string) => {
+export const searchAndStoreMentors = async (userId: string, targetCareer?: string) => {
   const [latestPath, cvUpload, userValues] = await Promise.all([
     prisma.careerPath.findFirst({
       where: { userId },
@@ -21,7 +21,7 @@ export const searchAndStoreMentors = async (userId: string) => {
   const skills = cvUpload?.extractedSkills.map((s) => s.skill) ?? [];
   const values = userValues.map((uv) => uv.value.key);
 
-  const found = await searchMentorsWithAI({ primaryPath, pathTitles, skills, values });
+  const found = await searchMentorsWithAI({ primaryPath, pathTitles, targetCareer, skills, values });
 
   if (found.length === 0) {
     const existing = await prisma.mentor.findMany({ where: { isActive: true }, take: 5 });

@@ -4,50 +4,75 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Screen } from '../components/layout/Screen';
 import { NovaBubble } from '../components/nova/NovaBubble';
-import { PrimaryButton } from '../components/ui/PrimaryButton';
-import { PathCard } from '../components/ui/PathCard';
+import { SwipeCard } from '../components/ui/SwipeCard';
 import { ProgressDots } from '../components/ui/ProgressDots';
 import { Colors } from '../constants/colors';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
 import { pathApi } from '../lib/api/onboarding.api';
-import type { CareerPath } from '../types';
+import type { CareerPath, PathScore } from '../types';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Path'>;
 };
 
 export const PathScreen = ({ navigation }: Props) => {
-  const { setCareerPath, selectedValues, skills, connectedPlatforms } = useOnboardingStore();
+  const { setCareerPath, setLikedPaths, selectedValues, skills, connectedPlatforms, chatSummary } = useOnboardingStore();
 
   const [path, setPath] = useState<CareerPath | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isReal, setIsReal] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Swipe state
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [likedTitles, setLikedTitles] = useState<string[]>([]);
+  const [allDone, setAllDone] = useState(false);
 
   const runAnalysis = () => {
     setLoading(true);
     setPath(null);
     setErrorMsg(null);
+    setCurrentIndex(0);
+    setLikedTitles([]);
+    setAllDone(false);
 
-    // Pass Zustand data as supplementary input — backend merges with DB records
     pathApi.generate({
       skills,
       values: selectedValues,
       socialSignals: connectedPlatforms.map((p) => ({ platform: p })),
+      chatSummary: chatSummary || undefined,
     }).then((result) => {
       setPath(result.path);
-      setIsReal(result.isReal);
       setCareerPath(result.path);
-      if (!result.isReal && result.errorMessage) {
-        setErrorMsg(result.errorMessage);
-      }
+      if (!result.isReal && result.errorMessage) setErrorMsg(result.errorMessage);
       setLoading(false);
     });
   };
 
   useEffect(() => { runAnalysis(); }, []);
 
-  // ── Loading state ─────────────────────────────────────────────────────────
+  const cards: PathScore[] = path?.pathScores ?? [];
+
+  const handleSwipeRight = (card: PathScore) => {
+    const newLiked = [...likedTitles, card.pathTitle];
+    setLikedTitles(newLiked);
+    advance(newLiked);
+  };
+
+  const handleSwipeLeft = () => {
+    advance(likedTitles);
+  };
+
+  const advance = (liked: string[]) => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= cards.length) {
+      setLikedPaths(liked);
+      setAllDone(true);
+    } else {
+      setCurrentIndex(nextIndex);
+    }
+  };
+
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <Screen>
@@ -58,13 +83,13 @@ export const PathScreen = ({ navigation }: Props) => {
             fontSize: 16, fontWeight: '700', color: Colors.dark,
             marginTop: 24, textAlign: 'center',
           }}>
-            nova is reading your profile...
+            nova is finding your paths...
           </Text>
           <Text style={{
             fontSize: 13, color: Colors.muted,
             marginTop: 8, textAlign: 'center', paddingHorizontal: 40,
           }}>
-            pulling together your skills, values and interests to find your path
+            pulling together your skills, values and everything you shared
           </Text>
         </View>
       </Screen>
@@ -73,94 +98,95 @@ export const PathScreen = ({ navigation }: Props) => {
 
   if (!path) return null;
 
-  const valuesLabel = selectedValues.slice(0, 2).join(' + ');
+  // ── All cards done ────────────────────────────────────────────────────────
+  if (allDone) {
+    const likedCount = likedTitles.length;
+    return (
+      <Screen>
+        <NovaBubble
+          message={
+            likedCount === 0
+              ? "no worries — i'll show you a range of options so you can explore 🌿"
+              : `loved your choices! let's find everything you need to break into ${likedTitles.join(' and ')} 🎯`
+          }
+          subtitle="online"
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 32 }}>
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>✦</Text>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: Colors.dark, textAlign: 'center', marginBottom: 8 }}>
+            {likedCount > 0 ? "nice — you've got taste 🧡" : "let's explore together"}
+          </Text>
+          <Text style={{ fontSize: 14, color: Colors.muted, textAlign: 'center', paddingHorizontal: 32 }}>
+            {likedCount > 0
+              ? `you liked ${likedCount} path${likedCount > 1 ? 's' : ''} — tap below to see real opportunities and mentors`
+              : "let me show you what's out there for your profile"}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('WaysIn')}
+          style={{
+            backgroundColor: Colors.orange,
+            borderRadius: 999, paddingVertical: 18,
+            alignItems: 'center', marginBottom: 16,
+          }}
+        >
+          <Text style={{ color: Colors.white, fontSize: 16, fontWeight: '700' }}>
+            close the gap →
+          </Text>
+        </TouchableOpacity>
+        <ProgressDots current={5} />
+      </Screen>
+    );
+  }
+
+  // ── Swipe cards ───────────────────────────────────────────────────────────
+  const currentCard = cards[currentIndex];
 
   return (
-    <Screen>
-      {/* Nova analysis bubble — real explanation from AI */}
-      <NovaBubble
-        message={path.explanation}
-        subtitle={isReal ? 'online' : 'offline mode'}
-      />
-
-      {/* Offline / error notice */}
-      {!isReal && (
+    <Screen scrollable={false}>
+      {/* Offline notice */}
+      {errorMsg && (
         <View style={{
           backgroundColor: '#FFF3CD', borderRadius: 12,
-          padding: 12, marginBottom: 12,
+          padding: 10, marginBottom: 10,
           flexDirection: 'row', alignItems: 'flex-start', gap: 8,
         }}>
-          <Text style={{ fontSize: 15 }}>⚠️</Text>
+          <Text style={{ fontSize: 14 }}>⚠️</Text>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, color: '#856404', lineHeight: 18 }}>
-              {errorMsg ?? "nova couldn't connect — showing a sample path"}
-            </Text>
-            <TouchableOpacity onPress={runAnalysis} style={{ marginTop: 6 }}>
-              <Text style={{ fontSize: 12, color: Colors.orange, fontWeight: '700' }}>
-                try again →
-              </Text>
+            <Text style={{ fontSize: 12, color: '#856404', lineHeight: 18 }}>{errorMsg}</Text>
+            <TouchableOpacity onPress={runAnalysis} style={{ marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: Colors.orange, fontWeight: '700' }}>try again →</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* Selected values summary */}
-      {valuesLabel ? (
-        <Text style={{ fontSize: 12, color: Colors.muted, marginBottom: 12 }}>
-          based on your values: {valuesLabel}
-        </Text>
-      ) : null}
-
-      {/* Path cards */}
-      <View style={{ marginBottom: 12 }}>
-        {path.pathScores.map((score) => (
-          <PathCard key={score.id} score={score} />
-        ))}
-      </View>
-
-      {/* Tension note */}
-      {path.tensionNote ? (
-        <View style={{
-          backgroundColor: Colors.amber,
-          borderRadius: 12, padding: 14,
-          marginBottom: 20,
-          flexDirection: 'row', alignItems: 'flex-start',
-        }}>
-          <Text style={{ fontSize: 16, marginRight: 8 }}>⚡</Text>
-          <Text style={{ fontSize: 13, color: Colors.dark, flex: 1, lineHeight: 18 }}>
-            <Text style={{ fontWeight: '700' }}>nova spotted a tension  </Text>
-            {path.tensionNote}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Next actions */}
-      {isReal && path.nextActions?.length > 0 && (
-        <View style={{
-          backgroundColor: Colors.white,
-          borderRadius: 12, padding: 14, marginBottom: 20,
-          borderWidth: 1, borderColor: Colors.border,
-        }}>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.dark, marginBottom: 8 }}>
-            next moves 🎯
-          </Text>
-          {path.nextActions.map((action, i) => (
-            <View key={i} style={{ flexDirection: 'row', marginBottom: 6 }}>
-              <Text style={{ fontSize: 12, color: Colors.orange, marginRight: 6 }}>→</Text>
-              <Text style={{ fontSize: 12, color: Colors.dark, flex: 1, lineHeight: 18 }}>
-                {action}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      <PrimaryButton
-        label="show me how →"
-        onPress={() => navigation.navigate('WaysIn')}
+      {/* Nova intro bubble */}
+      <NovaBubble
+        message={path.explanation || "here are some possible paths i found for you based on your skills, values and everything you shared 🎯"}
+        subtitle="online"
       />
 
-      <ProgressDots current={4} />
+      {/* Card counter */}
+      <Text style={{ fontSize: 12, color: Colors.muted, marginBottom: 12, textAlign: 'center' }}>
+        path {currentIndex + 1} of {cards.length}
+      </Text>
+
+      {/* Swipe card */}
+      <View style={{ flex: 1, paddingLeft: 32 }}>
+        {currentCard && (
+          <SwipeCard
+            key={currentCard.id}
+            score={currentCard}
+            cardIndex={currentIndex}
+            totalCards={cards.length}
+            onSwipeLeft={handleSwipeLeft}
+            onSwipeRight={() => handleSwipeRight(currentCard)}
+          />
+        )}
+      </View>
+
+      <ProgressDots current={5} />
     </Screen>
   );
 };

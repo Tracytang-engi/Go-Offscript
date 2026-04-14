@@ -44,12 +44,17 @@ Output format:
 export const searchMentorsWithAI = async (input: {
   primaryPath: string;
   pathTitles?: string[];
+  targetCareer?: string;
   skills: string[];
   values: string[];
 }): Promise<FoundMentor[]> => {
   if (!env.PERPLEXITY_API_KEY) return [];
 
-  const roleLines = (input.pathTitles ?? [input.primaryPath])
+  const targetTitles = input.targetCareer
+    ? [input.targetCareer]
+    : (input.pathTitles ?? [input.primaryPath]);
+
+  const roleLines = targetTitles
     .filter(Boolean)
     .map((t) => `  - ${t}`)
     .join('\n');

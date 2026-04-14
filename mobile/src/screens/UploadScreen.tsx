@@ -211,22 +211,30 @@ export const UploadScreen = ({ navigation }: Props) => {
         </TouchableOpacity>
       )}
 
-      {/* Extracted skills — only shown when real extraction succeeded */}
-      {skills.length > 0 && cvUploadResult?.isReal && (
+      {/* Extracted skills — shown after CV upload */}
+      {cvId && (
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 12, color: Colors.muted, marginBottom: 8 }}>
-            skills nova spotted in your CV ✦ tap to remove
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {skills.map((skill) => (
-              <SkillChip
-                key={skill}
-                label={skill}
-                selected
-                onPress={() => setSkills(skills.filter((s) => s !== skill))}
-              />
-            ))}
-          </View>
+          {skills.length > 0 ? (
+            <>
+              <Text style={{ fontSize: 12, color: Colors.muted, marginBottom: 8 }}>
+                skills nova spotted in your CV ✦ tap to remove
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {skills.slice(0, 7).map((skill) => (
+                  <SkillChip
+                    key={skill}
+                    label={skill}
+                    selected
+                    onPress={() => setSkills(skills.filter((s) => s !== skill))}
+                  />
+                ))}
+              </View>
+            </>
+          ) : (
+            <Text style={{ fontSize: 12, color: Colors.muted, fontStyle: 'italic' }}>
+              nova couldn't extract skills — re-upload your CV or we'll infer them in our chat
+            </Text>
+          )}
         </View>
       )}
 

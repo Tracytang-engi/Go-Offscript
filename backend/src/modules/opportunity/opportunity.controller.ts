@@ -29,7 +29,8 @@ export const getOpportunityById = async (req: Request, res: Response, next: Next
 export const searchOpportunities = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
-    const result = await opportunityService.searchAndStoreOpportunities(userId);
+    const targetCareer = typeof req.body?.targetCareer === 'string' ? req.body.targetCareer : undefined;
+    const result = await opportunityService.searchAndStoreOpportunities(userId, targetCareer);
     sendSuccess(res, result, result.isReal
       ? 'Found real opportunities for your path'
       : 'Showing curated opportunities'

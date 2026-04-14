@@ -53,6 +53,14 @@ export interface PathScore {
   label?: string;
   emoji?: string;
   rank: number;
+  description?: string;
+  skillsAlreadyHave?: string[];
+  skillsGap?: string[];
+}
+
+export interface ChatMessage {
+  role: 'user' | 'nova';
+  content: string;
 }
 
 export interface CareerPath {

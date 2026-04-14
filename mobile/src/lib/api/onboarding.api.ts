@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { MOCK_VALUES, MOCK_PATH, MOCK_OPPORTUNITIES } from './mock';
-import type { ApiResponse, Value, CareerPath, Opportunity, Mentor } from '../../types';
+import type { ApiResponse, Value, CareerPath, Opportunity, Mentor, ChatMessage } from '../../types';
 
 // ─── Values ───────────────────────────────────────────────────────────────────
 
@@ -81,6 +81,44 @@ export const socialApi = {
   },
 };
 
+// ─── Nova Profile Chat ────────────────────────────────────────────────────────
+
+export const novaApi = {
+  getProfile: async (clientData?: { skills?: string[]; values?: string[] }): Promise<{
+    profileSummary: string;
+    openingQuestion: string;
+  }> => {
+    try {
+      const r = await apiClient.post<ApiResponse<{ profileSummary: string; openingQuestion: string }>>(
+        '/nova/profile',
+        clientData ?? {}
+      );
+      return r.data.data;
+    } catch {
+      return {
+        profileSummary: "you've got a solid mix of skills and some clear values — let's dig a little deeper before i map out your path.",
+        openingQuestion: "Is there anything you've always wanted to try that doesn't show up on your CV?",
+      };
+    }
+  },
+
+  chat: async (
+    userMessage: string,
+    history: ChatMessage[],
+    profileContext?: string
+  ): Promise<{ response: string }> => {
+    try {
+      const r = await apiClient.post<ApiResponse<{ response: string }>>(
+        '/nova/chat',
+        { userMessage, history, profileContext }
+      );
+      return r.data.data;
+    } catch {
+      return { response: "that's really helpful — thanks for sharing. i'll factor that in when finding your paths." };
+    }
+  },
+};
+
 // ─── Career Path ──────────────────────────────────────────────────────────────
 
 export interface PathResult {
@@ -94,6 +132,7 @@ export const pathApi = {
     skills?: string[];
     values?: string[];
     socialSignals?: Array<{ platform: string; summary?: string }>;
+    chatSummary?: string;
   }): Promise<PathResult> => {
     try {
       const r = await apiClient.post<ApiResponse<{
@@ -113,9 +152,27 @@ export const pathApi = {
         tensionNote: d.tensionNote,
         nextActions: d.nextActions,
         pathScores: [
-          { id: '1', pathTitle: d.primaryPath.title, matchScore: d.primaryPath.matchScore, label: 'your sweet spot', rank: 1 },
-          ...(d.secondaryPath ? [{ id: '2', pathTitle: d.secondaryPath.title, matchScore: d.secondaryPath.matchScore, label: 'strong match', rank: 2 }] : []),
-          ...(d.tertiaryPath ? [{ id: '3', pathTitle: d.tertiaryPath.title, matchScore: d.tertiaryPath.matchScore, label: 'passion signal 🔥', rank: 3 }] : []),
+          {
+            id: '1', pathTitle: d.primaryPath.title, matchScore: d.primaryPath.matchScore,
+            label: 'your sweet spot', rank: 1,
+            description: d.primaryPath.description,
+            skillsAlreadyHave: (d.primaryPath as any).skillsAlreadyHave ?? [],
+            skillsGap: (d.primaryPath as any).skillsGap ?? [],
+          },
+          ...(d.secondaryPath ? [{
+            id: '2', pathTitle: d.secondaryPath.title, matchScore: d.secondaryPath.matchScore,
+            label: 'strong match', rank: 2,
+            description: d.secondaryPath.description,
+            skillsAlreadyHave: (d.secondaryPath as any).skillsAlreadyHave ?? [],
+            skillsGap: (d.secondaryPath as any).skillsGap ?? [],
+          }] : []),
+          ...(d.tertiaryPath ? [{
+            id: '3', pathTitle: d.tertiaryPath.title, matchScore: d.tertiaryPath.matchScore,
+            label: 'passion signal', rank: 3,
+            description: d.tertiaryPath.description,
+            skillsAlreadyHave: (d.tertiaryPath as any).skillsAlreadyHave ?? [],
+            skillsGap: (d.tertiaryPath as any).skillsGap ?? [],
+          }] : []),
         ],
       };
       return { path, isReal: true };
@@ -166,13 +223,14 @@ export const opportunityApi = {
 };
 
 // POST /opportunities/search — asks Perplexity for real current opps based on user's path
-export const searchOpportunities = async (): Promise<{
+export const searchOpportunities = async (targetCareer?: string): Promise<{
   opportunities: Opportunity[];
   isReal: boolean;
 }> => {
   try {
     const r = await apiClient.post<ApiResponse<{ opportunities: Opportunity[]; isReal: boolean }>>(
-      '/opportunities/search'
+      '/opportunities/search',
+      targetCareer ? { targetCareer } : {}
     );
     return r.data.data;
   } catch {
@@ -180,13 +238,14 @@ export const searchOpportunities = async (): Promise<{
   }
 };
 
-// ─── Mentors1 ─────────────────────────────────────────────────────────────────
+// ─── Mentors ──────────────────────────────────────────────────────────────────
 
 export const mentorApi = {
-  search: async (): Promise<{ mentors: Mentor[]; isReal: boolean }> => {
+  search: async (targetCareer?: string): Promise<{ mentors: Mentor[]; isReal: boolean }> => {
     try {
       const r = await apiClient.post<ApiResponse<{ mentors: Mentor[]; isReal: boolean }>>(
-        '/mentors/search'
+        '/mentors/search',
+        targetCareer ? { targetCareer } : {}
       );
       return r.data.data;
     } catch {

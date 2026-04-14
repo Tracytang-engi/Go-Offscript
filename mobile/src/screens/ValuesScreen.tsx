@@ -46,7 +46,7 @@ export const ValuesScreen = ({ navigation }: Props) => {
     } catch {
       // If save fails Nova will use values from the prompt directly when possible
     }
-    navigation.navigate('Path');
+    navigation.navigate('NovaChat');
     setSaving(false);
   };
 

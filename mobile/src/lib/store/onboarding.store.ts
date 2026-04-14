@@ -10,8 +10,11 @@ interface OnboardingState {
   connectedPlatforms: string[];
   // Values step
   selectedValues: string[];
+  // Nova chat step — summary of extra context the user shared
+  chatSummary: string;
   // Path step
   careerPath: CareerPath | null;
+  likedPaths: string[];   // titles of cards the user swiped right on
   // Ways In step
   opportunities: Opportunity[];
   opportunityFilter: string;
@@ -20,7 +23,9 @@ interface OnboardingState {
   setSkills: (skills: string[]) => void;
   togglePlatform: (platform: string) => void;
   toggleValue: (valueKey: string) => void;
+  setChatSummary: (summary: string) => void;
   setCareerPath: (path: CareerPath) => void;
+  setLikedPaths: (paths: string[]) => void;
   setOpportunities: (opps: Opportunity[]) => void;
   setOpportunityFilter: (filter: string) => void;
   reset: () => void;
@@ -32,7 +37,9 @@ const initialState = {
   skills: [],
   connectedPlatforms: [],
   selectedValues: [],
+  chatSummary: '',
   careerPath: null,
+  likedPaths: [],
   opportunities: [],
   opportunityFilter: 'all',
 };
@@ -57,7 +64,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         : [...state.selectedValues, valueKey],
     })),
 
+  setChatSummary: (chatSummary) => set({ chatSummary }),
   setCareerPath: (careerPath) => set({ careerPath }),
+  setLikedPaths: (likedPaths) => set({ likedPaths }),
   setOpportunities: (opportunities) => set({ opportunities }),
   setOpportunityFilter: (opportunityFilter) => set({ opportunityFilter }),
   reset: () => set(initialState),

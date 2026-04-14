@@ -35,7 +35,7 @@ export const getOpportunityById = async (id: string) => {
 
 // ─── AI-powered real opportunity search ──────────────────────────────────────
 
-export const searchAndStoreOpportunities = async (userId: string): Promise<{
+export const searchAndStoreOpportunities = async (userId: string, targetCareer?: string): Promise<{
   opportunities: Awaited<ReturnType<typeof prisma.opportunity.findMany>>;
   isReal: boolean;
 }> => {
@@ -61,7 +61,7 @@ export const searchAndStoreOpportunities = async (userId: string): Promise<{
   const values = userValues.map((uv) => uv.value.key);
 
   // Call Perplexity to find real opportunities anchored on exact path titles
-  const searched = await searchOpportunitiesWithAI({ primaryPath, pathTitles, skills, values });
+  const searched = await searchOpportunitiesWithAI({ primaryPath, pathTitles, targetCareer, skills, values });
 
   if (searched.length === 0) {
     // Fallback to seeded opportunities
