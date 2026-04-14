@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -28,22 +28,42 @@ export const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [slowNetwork, setSlowNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const setAuth = useAuthStore((s) => s.setAuth);
+  const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (slowTimer.current) clearTimeout(slowTimer.current); }, []);
 
   const handleLogin = async () => {
     setError(null);
     if (!email.includes('@')) { setError('check your email'); return; }
     if (!password) { setError('enter your password'); return; }
     setLoading(true);
+    setSlowNetwork(false);
+    slowTimer.current = setTimeout(() => setSlowNetwork(true), 8000);
     try {
       const result = await authApi.login({ email: email.trim().toLowerCase(), password });
       await setAuth(result.user, result.token);
       navigation.navigate('Upload');
-    } catch {
-      navigation.navigate('Upload');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('network')) {
+        setError('the server is waking up — wait a moment and try again');
+      } else if (
+        msg.toLowerCase().includes('invalid') ||
+        msg.toLowerCase().includes('credentials') ||
+        msg.toLowerCase().includes('password') ||
+        msg.toLowerCase().includes('not found')
+      ) {
+        setError('wrong email or password');
+      } else {
+        setError(msg || 'could not connect — please try again');
+      }
     } finally {
       setLoading(false);
+      setSlowNetwork(false);
+      if (slowTimer.current) clearTimeout(slowTimer.current);
     }
   };
 
@@ -76,6 +96,12 @@ export const LoginScreen = ({ navigation }: Props) => {
           onChangeText={setPassword}
           secureTextEntry
         />
+
+        {slowNetwork && loading ? (
+          <Text style={{ color: Colors.muted, fontSize: 13, marginBottom: 12 }}>
+            waking up the server, this takes ~30s on first connect...
+          </Text>
+        ) : null}
 
         {error ? (
           <Text style={{ color: 'red', fontSize: 13, marginBottom: 12 }}>{error}</Text>
