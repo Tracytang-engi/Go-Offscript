@@ -10,7 +10,16 @@ const pdfParse = require('pdf-parse');
 // ─── AI-powered skill extraction ─────────────────────────────────────────────
 
 const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
-  if (!env.PERPLEXITY_API_KEY || !cvText.trim()) return fallbackExtract(cvText);
+  console.log(`[CV] extractSkillsWithAI: textLength=${cvText.length}, hasApiKey=${!!env.PERPLEXITY_API_KEY}`);
+
+  if (!env.PERPLEXITY_API_KEY) {
+    console.warn('[CV] No PERPLEXITY_API_KEY — using keyword fallback');
+    return fallbackExtract(cvText);
+  }
+  if (!cvText.trim()) {
+    console.warn('[CV] Empty CV text — PDF parse may have failed');
+    return [];
+  }
 
   try {
     const res = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -25,30 +34,42 @@ const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
         messages: [
           {
             role: 'system',
-            content: `Extract 5-8 key professional skills from this CV. Return ONLY a JSON array of skill name strings. Be specific — use the actual terminology from the CV, not generic labels. No markdown, no explanation.
-Example output: ["Financial Modelling", "Python", "Client Management", "Figma", "Data Analysis"]`,
+            content: `You are a CV analyser. Extract 5-8 key professional skills from the CV text. 
+Reply with ONLY a comma-separated list of skill names — nothing else. No bullets, no numbers, no explanation.
+Example: Financial Modelling, Python, Client Management, Figma, Data Analysis`,
           },
           {
             role: 'user',
-            content: `CV text (first 3000 chars):\n\n${cvText.slice(0, 3000)}`,
+            content: cvText.slice(0, 4000),
           },
         ],
-        temperature: 0.2,
-        max_tokens: 200,
+        temperature: 0.1,
+        max_tokens: 150,
       }),
     });
 
-    if (!res.ok) throw new Error(`Perplexity error ${res.status}`);
+    if (!res.ok) {
+      const body = await res.text();
+      console.warn(`[CV] Perplexity API error ${res.status}:`, body);
+      return fallbackExtract(cvText);
+    }
 
     const data = await res.json() as { choices: Array<{ message: { content: string } }> };
-    const content = data.choices?.[0]?.message?.content ?? '';
-    const cleaned = content.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    const parsed = JSON.parse(cleaned) as string[];
+    const content = (data.choices?.[0]?.message?.content ?? '').trim();
+    console.log('[CV] Perplexity raw response:', content);
 
-    if (!Array.isArray(parsed) || parsed.length === 0) return fallbackExtract(cvText);
-    return parsed.filter((s): s is string => typeof s === 'string').slice(0, 8);
+    // Parse comma-separated list — robust, never throws
+    const skills = content
+      .split(',')
+      .map((s) => s.replace(/^[\s\-\*\d\.]+/, '').trim())  // strip bullets/numbers
+      .filter((s) => s.length > 1 && s.length < 60);        // sanity bounds
+
+    console.log('[CV] Parsed skills:', skills);
+
+    if (skills.length === 0) return fallbackExtract(cvText);
+    return skills.slice(0, 8);
   } catch (err) {
-    console.warn('[CV] AI skill extraction failed, using fallback:', err);
+    console.warn('[CV] AI skill extraction threw:', err);
     return fallbackExtract(cvText);
   }
 };
@@ -109,9 +130,10 @@ export const uploadCv = async (
     if (file.mimetype === 'application/pdf') {
       const result = await pdfParse(file.buffer);
       parsedText = result.text ?? '';
+      console.log(`[CV] PDF parsed OK — ${parsedText.length} chars, preview: "${parsedText.slice(0, 100).replace(/\n/g, ' ')}"`);
     } else {
-      // For DOC/DOCX — basic text extraction (good enough for skill detection)
       parsedText = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+      console.log(`[CV] DOC parsed — ${parsedText.length} chars`);
     }
   } catch (err) {
     console.warn('[CV] Text extraction failed, continuing with empty text:', err);
@@ -119,6 +141,7 @@ export const uploadCv = async (
 
   // 2. Extract skills using AI (falls back to keyword matching if unavailable)
   const skills = await extractSkillsWithAI(parsedText);
+  console.log(`[CV] Final skills (${skills.length}):`, skills);
 
   // 3. Upload to Cloudinary (skip gracefully if not configured)
   let fileUrl = '';
