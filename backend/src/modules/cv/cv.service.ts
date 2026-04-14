@@ -7,33 +7,73 @@ import type { UploadedFile } from '../../types/multer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse');
 
-// ─── Skill extraction from CV text ────────────────────────────────────────────
+// ─── AI-powered skill extraction ─────────────────────────────────────────────
+
+const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
+  if (!env.PERPLEXITY_API_KEY || !cvText.trim()) return fallbackExtract(cvText);
+
+  try {
+    const res = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.PERPLEXITY_API_KEY}`,
+        ...(env.PERPLEXITY_GROUP_ID ? { 'X-Group-Id': env.PERPLEXITY_GROUP_ID } : {}),
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: `Extract 5-8 key professional skills from this CV. Return ONLY a JSON array of skill name strings. Be specific — use the actual terminology from the CV, not generic labels. No markdown, no explanation.
+Example output: ["Financial Modelling", "Python", "Client Management", "Figma", "Data Analysis"]`,
+          },
+          {
+            role: 'user',
+            content: `CV text (first 3000 chars):\n\n${cvText.slice(0, 3000)}`,
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 200,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`Perplexity error ${res.status}`);
+
+    const data = await res.json() as { choices: Array<{ message: { content: string } }> };
+    const content = data.choices?.[0]?.message?.content ?? '';
+    const cleaned = content.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+    const parsed = JSON.parse(cleaned) as string[];
+
+    if (!Array.isArray(parsed) || parsed.length === 0) return fallbackExtract(cvText);
+    return parsed.filter((s): s is string => typeof s === 'string').slice(0, 8);
+  } catch (err) {
+    console.warn('[CV] AI skill extraction failed, using fallback:', err);
+    return fallbackExtract(cvText);
+  }
+};
+
+// ─── Fallback: keyword matching for when AI is unavailable ───────────────────
 
 const SKILL_PATTERNS = [
-  // Technical
-  'python', 'javascript', 'typescript', 'react', 'node.js', 'nodejs', 'sql', 'postgresql',
-  'mysql', 'mongodb', 'excel', 'powerpoint', 'word', 'google sheets',
-  // Finance
+  'python', 'javascript', 'typescript', 'react', 'node.js', 'sql', 'postgresql',
+  'excel', 'powerpoint', 'google sheets', 'power bi', 'tableau',
   'financial modelling', 'financial modeling', 'dcf', 'valuation', 'private equity',
-  'investment banking', 'hedge fund', 'portfolio management', 'risk management',
-  'accounting', 'budgeting', 'forecasting',
-  // Creative
-  'figma', 'sketch', 'photoshop', 'illustrator', 'indesign', 'canva', 'after effects',
-  'visual storytelling', 'brand strategy', 'content creation', 'copywriting',
-  'graphic design', 'ui/ux', 'user research',
-  // Soft / Business
-  'data analysis', 'project management', 'agile', 'scrum', 'client management',
-  'client comms', 'stakeholder management', 'presentation', 'public speaking',
-  'leadership', 'team management', 'communication', 'research', 'writing',
-  'marketing', 'social media', 'seo', 'growth hacking', 'product management',
-  'business development', 'sales', 'consulting', 'strategy',
-  // Design tools
-  'design tools', 'adobe suite', 'prototyping', 'wireframing',
+  'investment banking', 'portfolio management', 'risk management',
+  'accounting', 'budgeting', 'forecasting', 'financial analysis',
+  'figma', 'sketch', 'photoshop', 'illustrator', 'canva', 'after effects',
+  'brand strategy', 'content creation', 'copywriting', 'graphic design', 'ui/ux', 'user research',
+  'data analysis', 'data visualisation', 'data visualization', 'machine learning',
+  'project management', 'agile', 'scrum', 'stakeholder management',
+  'client management', 'leadership', 'communication', 'research', 'writing',
+  'marketing', 'social media', 'seo', 'product management',
+  'business development', 'sales', 'consulting', 'strategy', 'operations',
+  'prototyping', 'wireframing', 'public speaking', 'presentations',
 ];
 
-const extractSkillsFromText = (text: string): string[] => {
+const fallbackExtract = (text: string): string[] => {
   const lower = text.toLowerCase();
-  return [...new Set(SKILL_PATTERNS.filter((skill) => lower.includes(skill)))];
+  return [...new Set(SKILL_PATTERNS.filter((skill) => lower.includes(skill)))].slice(0, 8);
 };
 
 // ─── Upload to Cloudinary ─────────────────────────────────────────────────────
@@ -77,8 +117,8 @@ export const uploadCv = async (
     console.warn('[CV] Text extraction failed, continuing with empty text:', err);
   }
 
-  // 2. Extract skills from parsed text
-  const skills = extractSkillsFromText(parsedText);
+  // 2. Extract skills using AI (falls back to keyword matching if unavailable)
+  const skills = await extractSkillsWithAI(parsedText);
 
   // 3. Upload to Cloudinary (skip gracefully if not configured)
   let fileUrl = '';
