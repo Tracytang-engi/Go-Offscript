@@ -7,20 +7,6 @@ import type { UploadedFile } from '../../types/multer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse');
 
-// ─── Raw-byte text extraction (fallback when pdf-parse fails) ─────────────────
-// Reads printable ASCII sequences directly from the PDF binary — works on most
-// non-scanned PDFs even when pdf-parse crashes on compressed/newer PDF spec.
-const extractTextFromRawBytes = (buffer: Buffer): string => {
-  const raw = buffer.toString('latin1');
-  const segments = raw.match(/[\x20-\x7E]{5,}/g) ?? [];
-  const skip = /^(stream|endstream|startxref|%%EOF|obj|endobj|xref|BT|ET|Tf|Tm|Td|cm|re|W|n|q|Q|g|G|RG|rg|cs|CS|sc|SC|f|F|S|s|b|B)$/;
-  return segments
-    .filter((s) => !skip.test(s.trim()))
-    .join(' ')
-    .replace(/\s{2,}/g, ' ')
-    .slice(0, 6000);
-};
-
 // ─── AI-powered skill extraction ─────────────────────────────────────────────
 
 const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
@@ -31,7 +17,7 @@ const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
     return fallbackExtract(cvText);
   }
   if (!cvText.trim()) {
-    console.warn('[CV] All text extraction methods returned empty — cannot call Perplexity');
+    console.warn('[CV] CV text is empty — PDF parse failed');
     return [];
   }
 
@@ -72,11 +58,10 @@ Example: Financial Modelling, Python, Client Management, Figma, Data Analysis`,
     const content = (data.choices?.[0]?.message?.content ?? '').trim();
     console.log('[CV] Perplexity raw response:', content);
 
-    // Parse comma-separated list — robust, never throws
     const skills = content
       .split(',')
-      .map((s) => s.replace(/^[\s\-\*\d\.]+/, '').trim())  // strip bullets/numbers
-      .filter((s) => s.length > 1 && s.length < 60);        // sanity bounds
+      .map((s) => s.replace(/^[\s\-\*\d\.]+/, '').trim())
+      .filter((s) => s.length > 1 && s.length < 60);
 
     console.log('[CV] Parsed skills:', skills);
 
@@ -138,31 +123,26 @@ export const uploadCv = async (
   userId: string,
   file: UploadedFile
 ): Promise<{ cvId: string; skills: string[]; fileUrl: string; parsedText: string }> => {
-  // 1. Extract text from PDF — try pdf-parse first, raw bytes as fallback
+  // 1. Extract text from PDF
   let parsedText = '';
-  if (file.mimetype === 'application/pdf') {
-    try {
+  try {
+    if (file.mimetype === 'application/pdf') {
       const result = await pdfParse(file.buffer);
       parsedText = result.text ?? '';
       console.log(`[CV] pdf-parse OK — ${parsedText.length} chars, preview: "${parsedText.slice(0, 120).replace(/\n/g, ' ')}"`);
-    } catch (err) {
-      console.warn('[CV] pdf-parse failed, trying raw-byte extraction:', (err as Error).message);
+    } else {
+      parsedText = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+      console.log(`[CV] DOC text extracted — ${parsedText.length} chars`);
     }
-
-    if (!parsedText.trim()) {
-      parsedText = extractTextFromRawBytes(file.buffer);
-      console.log(`[CV] raw-byte extraction — ${parsedText.length} chars, preview: "${parsedText.slice(0, 120)}"`);
-    }
-  } else {
-    parsedText = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
-    console.log(`[CV] DOC text extracted — ${parsedText.length} chars`);
+  } catch (err) {
+    console.warn('[CV] PDF text extraction failed:', (err as Error).message);
   }
 
   // 2. Extract skills via Perplexity AI
   const skills = await extractSkillsWithAI(parsedText);
   console.log(`[CV] Final skills (${skills.length}):`, skills);
 
-  // 3. Upload to Cloudinary (skip gracefully if not configured)
+  // 3. Upload to Cloudinary
   let fileUrl = '';
   let cloudinaryId: string | undefined;
 
@@ -172,13 +152,12 @@ export const uploadCv = async (
       fileUrl = uploaded.secure_url;
       cloudinaryId = uploaded.public_id;
     } catch (err) {
-      console.warn('[CV] Cloudinary upload failed, saving without cloud URL:', err);
+      console.warn('[CV] Cloudinary upload failed:', err);
       fileUrl = `local://${file.originalname}`;
     }
   } else {
-    // Cloudinary not configured — store filename reference only
     fileUrl = `pending://${file.originalname}`;
-    console.warn('[CV] Cloudinary not configured — file not stored in cloud');
+    console.warn('[CV] Cloudinary not configured');
   }
 
   // 4. Save to database
@@ -205,7 +184,7 @@ export const uploadCv = async (
     cvId: cv.id,
     skills: cv.extractedSkills.map((s) => s.skill),
     fileUrl: cv.fileUrl,
-    parsedText: parsedText.slice(0, 500), // send preview to frontend
+    parsedText: parsedText.slice(0, 500),
   };
 };
 
