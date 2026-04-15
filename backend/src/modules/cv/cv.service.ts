@@ -7,6 +7,20 @@ import type { UploadedFile } from '../../types/multer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse');
 
+// ─── Raw-byte text extraction (fallback when pdf-parse fails) ─────────────────
+// Reads printable ASCII sequences directly from the PDF binary — works on most
+// non-scanned PDFs even when pdf-parse crashes on compressed/newer PDF spec.
+const extractTextFromRawBytes = (buffer: Buffer): string => {
+  const raw = buffer.toString('latin1');
+  const segments = raw.match(/[\x20-\x7E]{5,}/g) ?? [];
+  const skip = /^(stream|endstream|startxref|%%EOF|obj|endobj|xref|BT|ET|Tf|Tm|Td|cm|re|W|n|q|Q|g|G|RG|rg|cs|CS|sc|SC|f|F|S|s|b|B)$/;
+  return segments
+    .filter((s) => !skip.test(s.trim()))
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .slice(0, 6000);
+};
+
 // ─── AI-powered skill extraction ─────────────────────────────────────────────
 
 const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
@@ -17,7 +31,7 @@ const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
     return fallbackExtract(cvText);
   }
   if (!cvText.trim()) {
-    console.warn('[CV] Empty CV text — PDF parse may have failed');
+    console.warn('[CV] All text extraction methods returned empty — cannot call Perplexity');
     return [];
   }
 
@@ -124,22 +138,27 @@ export const uploadCv = async (
   userId: string,
   file: UploadedFile
 ): Promise<{ cvId: string; skills: string[]; fileUrl: string; parsedText: string }> => {
-  // 1. Extract text from PDF
+  // 1. Extract text from PDF — try pdf-parse first, raw bytes as fallback
   let parsedText = '';
-  try {
-    if (file.mimetype === 'application/pdf') {
+  if (file.mimetype === 'application/pdf') {
+    try {
       const result = await pdfParse(file.buffer);
       parsedText = result.text ?? '';
-      console.log(`[CV] PDF parsed OK — ${parsedText.length} chars, preview: "${parsedText.slice(0, 100).replace(/\n/g, ' ')}"`);
-    } else {
-      parsedText = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
-      console.log(`[CV] DOC parsed — ${parsedText.length} chars`);
+      console.log(`[CV] pdf-parse OK — ${parsedText.length} chars, preview: "${parsedText.slice(0, 120).replace(/\n/g, ' ')}"`);
+    } catch (err) {
+      console.warn('[CV] pdf-parse failed, trying raw-byte extraction:', (err as Error).message);
     }
-  } catch (err) {
-    console.warn('[CV] Text extraction failed, continuing with empty text:', err);
+
+    if (!parsedText.trim()) {
+      parsedText = extractTextFromRawBytes(file.buffer);
+      console.log(`[CV] raw-byte extraction — ${parsedText.length} chars, preview: "${parsedText.slice(0, 120)}"`);
+    }
+  } else {
+    parsedText = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+    console.log(`[CV] DOC text extracted — ${parsedText.length} chars`);
   }
 
-  // 2. Extract skills using AI (falls back to keyword matching if unavailable)
+  // 2. Extract skills via Perplexity AI
   const skills = await extractSkillsWithAI(parsedText);
   console.log(`[CV] Final skills (${skills.length}):`, skills);
 
