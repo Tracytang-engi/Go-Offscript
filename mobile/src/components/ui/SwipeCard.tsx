@@ -1,268 +1,211 @@
-import React, { useRef } from 'react';
-import {
-  View, Text, Animated, PanResponder, Dimensions,
-} from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Colors } from '../../constants/colors';
 import type { PathScore } from '../../types';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = 90;
-
-interface SwipeCardProps {
+interface PathCardProps {
   score: PathScore;
-  cardIndex: number;       // 0-based index of this card in the stack
+  index: number;
   totalCards: number;
-  onSwipeLeft: () => void;
-  onSwipeRight: () => void;
+  decision: 'like' | 'skip' | undefined;
+  onLike: () => void;
+  onSkip: () => void;
 }
 
-export const SwipeCard = ({ score, cardIndex, totalCards, onSwipeLeft, onSwipeRight }: SwipeCardProps) => {
-  const position = useRef(new Animated.ValueXY()).current;
-
-  const rotate = position.x.interpolate({
-    inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-    outputRange: ['-6deg', '0deg', '6deg'],
-    extrapolate: 'clamp',
-  });
-
-  const likeOpacity = position.x.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD / 2],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-  const nopeOpacity = position.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD / 2, 0],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: (_evt, gestureState) => {
-      position.setValue({ x: gestureState.dx, y: gestureState.dy });
-    },
-    onPanResponderRelease: (_evt, gestureState) => {
-      if (gestureState.dx > SWIPE_THRESHOLD) {
-        swipeRight();
-      } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-        swipeLeft();
-      } else {
-        Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
-      }
-    },
-  })).current;
-
-  const swipeLeft = () => {
-    Animated.timing(position, {
-      toValue: { x: -SCREEN_WIDTH * 1.5, y: 0 },
-      duration: 250,
-      useNativeDriver: true,
-    }).start(onSwipeLeft);
-  };
-
-  const swipeRight = () => {
-    Animated.timing(position, {
-      toValue: { x: SCREEN_WIDTH * 1.5, y: 0 },
-      duration: 250,
-      useNativeDriver: true,
-    }).start(onSwipeRight);
-  };
-
+export const SwipeCard = ({ score, index, totalCards, decision, onLike, onSkip }: PathCardProps) => {
   const matchColor =
     score.matchScore >= 80 ? Colors.orange :
     score.matchScore >= 60 ? Colors.orangeMuted : Colors.muted;
 
+  const have = (score.skillsAlreadyHave ?? []).slice(0, 3);
+  const gap  = (score.skillsGap ?? []).slice(0, 3);
+
   return (
     <View style={{ flex: 1 }}>
-      {/* Dot indicators — left side */}
+      {/* ── Dot indicators — left of card ── */}
       <View style={{
-        position: 'absolute', left: -28, top: '40%',
-        flexDirection: 'column', gap: 6, alignItems: 'center',
+        position: 'absolute',
+        left: -22,
+        top: 0, bottom: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
       }}>
         {Array.from({ length: totalCards }).map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: i === cardIndex ? 8 : 6,
-              height: i === cardIndex ? 8 : 6,
-              borderRadius: 4,
-              backgroundColor: i === cardIndex ? Colors.orange : Colors.border,
-            }}
-          />
+          <View key={i} style={{
+            width: i === index ? 9 : 6,
+            height: i === index ? 9 : 6,
+            borderRadius: 99,
+            backgroundColor: i === index ? Colors.orange : Colors.border,
+          }} />
         ))}
       </View>
 
-      {/* Swipeable card */}
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={{
-          transform: [{ translateX: position.x }, { translateY: position.y }, { rotate }],
-          flex: 1,
-        }}
-      >
-        <View style={{
-          backgroundColor: Colors.white,
-          borderRadius: 24,
-          padding: 24,
-          flex: 1,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.10,
-          shadowRadius: 12,
-          elevation: 6,
-        }}>
-          {/* Like / Nope overlays */}
-          <Animated.View style={{
-            position: 'absolute', top: 24, right: 24,
-            backgroundColor: Colors.orange,
-            borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6,
-            opacity: likeOpacity, zIndex: 10,
-            transform: [{ rotate: '10deg' }],
-          }}>
-            <Text style={{ color: Colors.white, fontSize: 18, fontWeight: '800' }}>YES ✓</Text>
-          </Animated.View>
-          <Animated.View style={{
-            position: 'absolute', top: 24, left: 24,
-            backgroundColor: '#EF4444',
-            borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6,
-            opacity: nopeOpacity, zIndex: 10,
-            transform: [{ rotate: '-10deg' }],
-          }}>
-            <Text style={{ color: Colors.white, fontSize: 18, fontWeight: '800' }}>NOPE ✕</Text>
-          </Animated.View>
-
-          {/* Match score badge */}
+      {/* ── Card ── */}
+      <View style={{
+        flex: 1,
+        backgroundColor: Colors.white,
+        borderRadius: 24,
+        padding: 20,
+        borderWidth: 2,
+        borderColor:
+          decision === 'like'  ? '#059669' :
+          decision === 'skip'  ? '#EF4444' : 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 5,
+      }}>
+        {/* Decision badge */}
+        {decision && (
           <View style={{
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: 16,
+            position: 'absolute', top: 16, right: 16, zIndex: 10,
+            width: 32, height: 32, borderRadius: 16,
+            backgroundColor: decision === 'like' ? '#059669' : '#EF4444',
+            alignItems: 'center', justifyContent: 'center',
           }}>
-            {score.label ? (
-              <View style={{
-                backgroundColor: Colors.orangeLight,
-                borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
-              }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.orange }}>
-                  {score.label}
-                </Text>
-              </View>
-            ) : <View />}
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+              {decision === 'like' ? '✓' : '✕'}
+            </Text>
+          </View>
+        )}
+
+        {/* Top row: label + match */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          {score.label ? (
             <View style={{
-              backgroundColor: matchColor + '20',
-              borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6,
+              backgroundColor: Colors.orangeLight, borderRadius: 999,
+              paddingHorizontal: 10, paddingVertical: 3,
             }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: matchColor }}>
-                {score.matchScore}% match
+              <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.orange }}>
+                {score.label}
               </Text>
             </View>
-          </View>
-
-          {/* Job title */}
-          <Text style={{
-            fontSize: 24, fontWeight: '800', color: Colors.dark,
-            lineHeight: 30, marginBottom: 12,
+          ) : <View />}
+          <View style={{
+            backgroundColor: matchColor + '22', borderRadius: 999,
+            paddingHorizontal: 12, paddingVertical: 4,
           }}>
-            {score.pathTitle}
-          </Text>
-
-          {/* Why recommended */}
-          {score.description ? (
-            <Text style={{
-              fontSize: 14, color: Colors.dark, lineHeight: 21,
-              marginBottom: 20, opacity: 0.8,
-            }}>
-              {score.description}
+            <Text style={{ fontSize: 14, fontWeight: '800', color: matchColor }}>
+              {score.matchScore}% match
             </Text>
-          ) : null}
+          </View>
+        </View>
 
-          {/* Skills already have */}
-          {(score.skillsAlreadyHave ?? []).length > 0 && (
-            <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                skills you already have
+        {/* Title */}
+        <Text style={{
+          fontSize: 22, fontWeight: '800', color: Colors.dark,
+          lineHeight: 28, marginBottom: 8,
+        }} numberOfLines={2}>
+          {score.pathTitle}
+        </Text>
+
+        {/* Description */}
+        {score.description ? (
+          <Text style={{
+            fontSize: 13, color: Colors.muted, lineHeight: 19,
+            marginBottom: 16,
+          }} numberOfLines={3}>
+            {score.description}
+          </Text>
+        ) : null}
+
+        {/* Skills — two columns */}
+        <View style={{ flexDirection: 'row', gap: 12, flex: 1 }}>
+          {/* Skills I have */}
+          {have.length > 0 && (
+            <View style={{ flex: 1 }}>
+              <Text style={{
+                fontSize: 10, fontWeight: '700', color: '#059669',
+                textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6,
+              }}>
+                already have
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {(score.skillsAlreadyHave ?? []).map((s) => (
+              <View style={{ gap: 5 }}>
+                {have.map((s) => (
                   <View key={s} style={{
                     backgroundColor: '#D1FAE5', borderRadius: 999,
                     paddingHorizontal: 10, paddingVertical: 4,
                   }}>
-                    <Text style={{ fontSize: 12, color: '#065F46', fontWeight: '600' }}>{s}</Text>
+                    <Text style={{ fontSize: 11, color: '#065F46', fontWeight: '600' }} numberOfLines={1}>
+                      {s}
+                    </Text>
                   </View>
                 ))}
               </View>
             </View>
           )}
 
-          {/* Skills gap */}
-          {(score.skillsGap ?? []).length > 0 && (
-            <View style={{ marginBottom: 8 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                skills to develop
+          {/* Skills to develop */}
+          {gap.length > 0 && (
+            <View style={{ flex: 1 }}>
+              <Text style={{
+                fontSize: 10, fontWeight: '700', color: Colors.muted,
+                textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6,
+              }}>
+                to develop
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {(score.skillsGap ?? []).map((s) => (
+              <View style={{ gap: 5 }}>
+                {gap.map((s) => (
                   <View key={s} style={{
                     backgroundColor: Colors.cream, borderRadius: 999,
                     paddingHorizontal: 10, paddingVertical: 4,
                     borderWidth: 1, borderColor: Colors.border,
                   }}>
-                    <Text style={{ fontSize: 12, color: Colors.muted, fontWeight: '600' }}>{s}</Text>
+                    <Text style={{ fontSize: 11, color: Colors.muted, fontWeight: '600' }} numberOfLines={1}>
+                      {s}
+                    </Text>
                   </View>
                 ))}
               </View>
             </View>
           )}
         </View>
-      </Animated.View>
-
-      {/* Action buttons */}
-      <View style={{
-        flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-        gap: 40, marginTop: 20,
-      }}>
-        {/* Dislike — X */}
-        <View style={{ alignItems: 'center', gap: 4 }}>
-          <Animated.View style={{ transform: [{ scale: nopeOpacity.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] }) }] }}>
-            <View
-              onTouchEnd={swipeLeft}
-              style={{
-                width: 60, height: 60, borderRadius: 30,
-                backgroundColor: '#FEE2E2',
-                alignItems: 'center', justifyContent: 'center',
-                shadowColor: '#EF4444', shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2, shadowRadius: 6, elevation: 3,
-              }}
-            >
-              <Text style={{ fontSize: 26, color: '#EF4444' }}>✕</Text>
-            </View>
-          </Animated.View>
-        </View>
-
-        {/* Like — checkmark */}
-        <View style={{ alignItems: 'center', gap: 4 }}>
-          <Animated.View style={{ transform: [{ scale: likeOpacity.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] }) }] }}>
-            <View
-              onTouchEnd={swipeRight}
-              style={{
-                width: 60, height: 60, borderRadius: 30,
-                backgroundColor: '#D1FAE5',
-                alignItems: 'center', justifyContent: 'center',
-                shadowColor: '#059669', shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2, shadowRadius: 6, elevation: 3,
-              }}
-            >
-              <Text style={{ fontSize: 26, color: '#059669' }}>✓</Text>
-            </View>
-          </Animated.View>
-        </View>
       </View>
 
-      {/* Hint text */}
+      {/* ── Action buttons ── */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'center',
+        alignItems: 'center', gap: 44, marginTop: 14,
+      }}>
+        {/* Skip */}
+        <TouchableOpacity
+          onPress={onSkip}
+          style={{
+            width: 58, height: 58, borderRadius: 29,
+            backgroundColor: decision === 'skip' ? '#EF4444' : '#FEE2E2',
+            alignItems: 'center', justifyContent: 'center',
+            shadowColor: '#EF4444', shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: decision === 'skip' ? 0.4 : 0.15, shadowRadius: 6,
+            elevation: 3,
+          }}
+        >
+          <Text style={{ fontSize: 22, color: decision === 'skip' ? '#fff' : '#EF4444' }}>✕</Text>
+        </TouchableOpacity>
+
+        {/* Like */}
+        <TouchableOpacity
+          onPress={onLike}
+          style={{
+            width: 58, height: 58, borderRadius: 29,
+            backgroundColor: decision === 'like' ? '#059669' : '#D1FAE5',
+            alignItems: 'center', justifyContent: 'center',
+            shadowColor: '#059669', shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: decision === 'like' ? 0.4 : 0.15, shadowRadius: 6,
+            elevation: 3,
+          }}
+        >
+          <Text style={{ fontSize: 22, color: decision === 'like' ? '#fff' : '#059669' }}>✓</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Hint */}
       <Text style={{
-        textAlign: 'center', fontSize: 11, color: Colors.muted,
+        textAlign: 'center', fontSize: 11, color: Colors.border,
         marginTop: 8,
       }}>
-        swipe right to like · swipe left to skip
+        swipe up · tap to choose
       </Text>
     </View>
   );
