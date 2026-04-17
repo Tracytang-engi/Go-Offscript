@@ -31,9 +31,12 @@ const getDeadlineBadgeStyle = (deadline?: string) => {
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
+  saved?: boolean;
+  onToggleSave?: () => void;
+  onPress?: () => void;
 }
 
-export const OpportunityCard = ({ opportunity }: OpportunityCardProps) => {
+export const OpportunityCard = ({ opportunity, saved, onToggleSave, onPress }: OpportunityCardProps) => {
   const badgeStyle = getDeadlineBadgeStyle(opportunity.deadline);
   const hasApplyLink = !!opportunity.url;
 
@@ -44,7 +47,9 @@ export const OpportunityCard = ({ opportunity }: OpportunityCardProps) => {
   };
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={onPress ? 0.7 : 1}
+      onPress={onPress}
       style={{
         backgroundColor: Colors.white,
         borderRadius: 16,
@@ -100,7 +105,7 @@ export const OpportunityCard = ({ opportunity }: OpportunityCardProps) => {
         </View>
       )}
 
-      {/* Footer: social proof + apply button */}
+      {/* Footer: social proof + apply + star */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         {opportunity.peerCount > 0 ? (
           <Text style={{ fontSize: 12, color: Colors.muted }}>
@@ -108,22 +113,32 @@ export const OpportunityCard = ({ opportunity }: OpportunityCardProps) => {
           </Text>
         ) : <View />}
 
-        {hasApplyLink ? (
-          <TouchableOpacity
-            onPress={handleApply}
-            style={{
-              backgroundColor: Colors.orange,
-              borderRadius: 999,
-              paddingHorizontal: 16,
-              paddingVertical: 7,
-            }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.white }}>
-              apply →
-            </Text>
-          </TouchableOpacity>
-        ) : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {hasApplyLink ? (
+            <TouchableOpacity
+              onPress={handleApply}
+              style={{
+                backgroundColor: Colors.orange,
+                borderRadius: 999,
+                paddingHorizontal: 16,
+                paddingVertical: 7,
+              }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.white }}>
+                apply →
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {onToggleSave !== undefined && (
+            <TouchableOpacity onPress={onToggleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={{ fontSize: 20, color: saved ? '#FBBF24' : '#D1D5DB' }}>
+                {saved ? '★' : '☆'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };

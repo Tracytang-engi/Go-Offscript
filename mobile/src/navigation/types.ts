@@ -7,4 +7,6 @@ export type RootStackParamList = {
   NovaChat: undefined;
   Path: undefined;
   WaysIn: undefined;
+  Dashboard: undefined;
+  Chat: undefined;
 };

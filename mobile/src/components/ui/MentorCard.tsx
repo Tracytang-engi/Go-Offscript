@@ -5,9 +5,11 @@ import type { Mentor } from '../../types';
 
 interface MentorCardProps {
   mentor: Mentor;
+  saved?: boolean;
+  onToggleSave?: () => void;
 }
 
-export const MentorCard = ({ mentor }: MentorCardProps) => {
+export const MentorCard = ({ mentor, saved, onToggleSave }: MentorCardProps) => {
   const initials = mentor.name
     .split(' ')
     .map((n) => n[0])
@@ -16,8 +18,6 @@ export const MentorCard = ({ mentor }: MentorCardProps) => {
     .slice(0, 2);
 
   const handleChat = () => {
-    // linkedinUrl is always a LinkedIn people search URL (name + title + company)
-    // so this will always open a real, working page
     const url = mentor.linkedinUrl
       ?? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(mentor.name)}`;
     Linking.openURL(url).catch(() => {});
@@ -64,6 +64,15 @@ export const MentorCard = ({ mentor }: MentorCardProps) => {
             {mentor.title}
           </Text>
         </View>
+
+        {/* Star save button */}
+        {onToggleSave !== undefined && (
+          <TouchableOpacity onPress={onToggleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={{ fontSize: 20, color: saved ? '#FBBF24' : '#D1D5DB' }}>
+              {saved ? '★' : '☆'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* LinkedIn badge */}
         <View style={{

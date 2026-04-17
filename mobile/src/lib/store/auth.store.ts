@@ -6,8 +6,9 @@ import { MOCK_TOKEN } from '../api/mock';
 interface AuthState {
   user: User | null;
   token: string | null;
-  isOffline: boolean;          // true when using mock/offline session
+  isOffline: boolean;
   isLoading: boolean;
+  onboardingComplete: boolean;
   setAuth: (user: User, token: string) => Promise<void>;
   clearAuth: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
@@ -18,6 +19,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   isOffline: false,
   isLoading: true,
+  onboardingComplete: false,
 
   setAuth: async (user, token) => {
     const offline = token === MOCK_TOKEN;
@@ -37,12 +39,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadStoredAuth: async () => {
     try {
-      const [token, userStr] = await Promise.all([
+      const [token, userStr, onboardingFlag] = await Promise.all([
         AsyncStorage.getItem('auth_token'),
         AsyncStorage.getItem('auth_user'),
+        AsyncStorage.getItem('onboarding_complete'),
       ]);
       if (token && userStr) {
-        set({ token, user: JSON.parse(userStr) as User, isOffline: false });
+        set({
+          token,
+          user: JSON.parse(userStr) as User,
+          isOffline: false,
+          onboardingComplete: onboardingFlag === 'true',
+        });
       }
     } finally {
       set({ isLoading: false });

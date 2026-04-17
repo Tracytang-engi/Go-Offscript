@@ -16,7 +16,6 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'WaysIn'>;
 };
 
-// Content type filter
 type ContentType = 'all' | 'jobs' | 'projects' | 'events' | 'mentors';
 
 const CONTENT_FILTERS: { key: ContentType; label: string }[] = [
@@ -35,32 +34,31 @@ const CONTENT_OPP_TYPES: Record<ContentType, string[]> = {
   mentors: [],
 };
 
-export const WaysInScreen = ({ navigation: _navigation }: Props) => {
-  const { likedPaths, setOpportunities } = useOnboardingStore();
+export const WaysInScreen = ({ navigation }: Props) => {
+  const {
+    likedPaths,
+    setOpportunities,
+    savedOpportunityIds,
+    toggleSavedOpp,
+    setOnboardingComplete,
+  } = useOnboardingStore();
 
-  // Layer 1: which career is selected
   const [selectedCareer, setSelectedCareer] = useState<string>('all');
-  // Layer 2: content type
   const [contentType, setContentType] = useState<ContentType>('all');
 
-  // Opportunities cached by career key (parallel-fetched on mount)
   const [oppsByCareer, setOppsByCareer] = useState<Record<string, Opportunity[]>>({});
   const [oppsLoading, setOppsLoading] = useState(true);
   const [oppsIsReal, setOppsIsReal] = useState(false);
 
-  // Mentors — lazy loaded when Mentors tab is selected (unchanged)
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [mentorsLoading, setMentorsLoading] = useState(false);
   const [mentorsIsReal, setMentorsIsReal] = useState(false);
   const fetchedMentorCareers = useRef<Set<string>>(new Set());
 
-  // Career chips from liked paths
   const careerChips = ['all', ...likedPaths];
 
-  // On mount: parallel fetch one search per liked career (or one general if none)
   useEffect(() => {
     const careers = likedPaths.length > 0 ? likedPaths : [];
-    // Always include a general (no targetCareer) search for the "all" view
     const targets: Array<string | undefined> = [undefined, ...careers];
 
     setOppsLoading(true);
@@ -77,15 +75,12 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
       });
   }, []);
 
-  // Career chip tap — local switch only, no API call
   const handleCareerSelect = (career: string) => {
     setSelectedCareer(career);
     setContentType('all');
-    // Reset mentor cache so Mentors tab re-fetches for new career
     fetchedMentorCareers.current.delete(career);
   };
 
-  // Content type tap — local filter; Mentors tab triggers lazy LinkedIn search
   const handleContentType = (type: ContentType) => {
     setContentType(type);
     if (type === 'mentors' && !fetchedMentorCareers.current.has(selectedCareer)) {
@@ -93,7 +88,6 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
     }
   };
 
-  // Fetch mentors lazily — unchanged behaviour
   const fetchMentors = async (career: string) => {
     if (fetchedMentorCareers.current.has(career)) return;
     fetchedMentorCareers.current.add(career);
@@ -105,11 +99,14 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
     setMentorsLoading(false);
   };
 
-  // Resolve current opportunity list from cache (instant, no loading)
+  const handleGoToDashboard = async () => {
+    await setOnboardingComplete();
+    navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
+  };
+
   const careerKey = selectedCareer === 'all' ? 'all' : selectedCareer;
   const currentOpps = oppsByCareer[careerKey] ?? oppsByCareer['all'] ?? [];
 
-  // Filter by content type
   const filteredOpps = currentOpps.filter((o) =>
     CONTENT_OPP_TYPES[contentType].includes(o.type)
   );
@@ -125,7 +122,7 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
     <Screen>
       <NovaBubble message={novaMessage} subtitle={oppsIsReal ? 'live search ✦' : 'online'} />
 
-      {/* Layer 1 — Career filter (from liked paths) */}
+      {/* Layer 1 — Career filter */}
       {careerChips.length > 1 && (
         <ScrollView
           horizontal showsHorizontalScrollIndicator={false}
@@ -220,7 +217,14 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
           </Text>
         ) : (
           <View>
-            {mentors.map((m) => <MentorCard key={m.id} mentor={m} />)}
+            {mentors.map((m) => (
+              <MentorCard
+                key={m.id}
+                mentor={m}
+                saved={savedOpportunityIds.includes(m.id)}
+                onToggleSave={() => toggleSavedOpp(m.id)}
+              />
+            ))}
           </View>
         )
       ) : filteredOpps.length === 0 ? (
@@ -229,11 +233,35 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
         </Text>
       ) : (
         <View>
-          {filteredOpps.map((opp) => <OpportunityCard key={opp.id} opportunity={opp} />)}
+          {filteredOpps.map((opp) => (
+            <OpportunityCard
+              key={opp.id}
+              opportunity={opp}
+              saved={savedOpportunityIds.includes(opp.id)}
+              onToggleSave={() => toggleSavedOpp(opp.id)}
+            />
+          ))}
         </View>
       )}
 
       <ProgressDots current={6} />
+
+      {/* Go to Dashboard CTA */}
+      <TouchableOpacity
+        onPress={handleGoToDashboard}
+        style={{
+          backgroundColor: Colors.orange,
+          borderRadius: 16,
+          paddingVertical: 16,
+          alignItems: 'center',
+          marginTop: 24,
+          marginBottom: 8,
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: '800', color: Colors.white, letterSpacing: 0.3 }}>
+          go to my dashboard →
+        </Text>
+      </TouchableOpacity>
     </Screen>
   );
 };
