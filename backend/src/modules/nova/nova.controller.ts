@@ -8,7 +8,7 @@ import {
   buildNovaProfilePrompt,
   buildNovaUserPrompt,
 } from './nova.prompt';
-import { sendSuccess } from '../../utils/response';
+import { sendError, sendSuccess } from '../../utils/response';
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 
@@ -179,6 +179,85 @@ export const analyze = async (req: Request, res: Response, next: NextFunction) =
     });
 
     sendSuccess(res, result, 'Nova analysis complete');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /nova/linkedin-outreach — one follow-up question, then cold message draft
+const LINKEDIN_FOLLOWUP_SYSTEM = `You are Nova. Be extremely brief — no greetings, no filler.
+Output ONLY valid JSON: {"question":"..."}
+The question must be ONE short sentence (max 22 words) asking what you still need to know to write a strong LinkedIn cold message for this situation.`;
+
+const LINKEDIN_MESSAGE_SYSTEM = `You write LinkedIn cold messages for early-career users.
+Output ONLY valid JSON: {"message":"..."}
+Rules for "message":
+- English, 40-80 words (strict)
+- Warm, professional, specific to the mentor's background; no false claims or fake connections
+- Appropriate sign-off; use the mentor's first name if natural`;
+
+export const linkedinOutreach = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = req.body as {
+      phase: 'followup' | 'generate';
+      mentorName: string;
+      mentorTitle: string;
+      mentorBio: string;
+      userProfileSummary: string;
+      purpose: 'job' | 'chat' | 'other';
+      purposeDetail?: string;
+      followUpAnswer?: string;
+    };
+
+    const purposeLabel =
+      body.purpose === 'job'
+        ? 'inquire about a job or role'
+        : body.purpose === 'chat'
+          ? 'arrange a short chat / coffee chat'
+          : `other: ${(body.purposeDetail ?? '').trim() || 'user-specified goal'}`;
+
+    if (body.phase === 'followup') {
+      const userPrompt = [
+        `Mentor: ${body.mentorName} — ${body.mentorTitle}`,
+        `Public-style bio: ${body.mentorBio}`,
+        `User profile (summary): ${body.userProfileSummary || 'not provided'}`,
+        `Message goal: ${purposeLabel}`,
+        'Ask ONE follow-up question so you can write the message next.',
+      ].join('\n');
+
+      const result = await callPerplexityJson<{ question: string }>(
+        LINKEDIN_FOLLOWUP_SYSTEM,
+        userPrompt,
+        { question: 'What role or team at their company are you most interested in, and what do you want them to do next (reply, intro, or advice)?' }
+      );
+      sendSuccess(res, result, 'Follow-up ready');
+      return;
+    }
+
+    if (body.phase === 'generate') {
+      const answer = (body.followUpAnswer ?? '').trim() || 'no extra detail';
+      const userPrompt = [
+        `Mentor: ${body.mentorName} — ${body.mentorTitle}`,
+        `Bio: ${body.mentorBio}`,
+        `User profile: ${body.userProfileSummary || 'not provided'}`,
+        `Goal: ${purposeLabel}`,
+        `User answered your clarifying question with: "${answer}"`,
+        'Write the LinkedIn message the user can send.',
+      ].join('\n\n');
+
+      const result = await callPerplexityJson<{ message: string }>(
+        LINKEDIN_MESSAGE_SYSTEM,
+        userPrompt,
+        {
+          message:
+            `Hi ${body.mentorName.split(' ')[0]}, I came across your work at the intersection of our shared interests and I'm exploring paths in this space. I'd really value a brief perspective from someone with your experience. Would you be open to a short note or a 15-minute chat when you have a moment? Thank you for considering.`,
+        }
+      );
+      sendSuccess(res, result, 'Message drafted');
+      return;
+    }
+
+    return sendError(res, 'phase must be "followup" or "generate"', 400);
   } catch (err) {
     next(err);
   }

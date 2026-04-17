@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { CareerPath, Opportunity } from '../../types';
+import type { CareerPath, Opportunity, Mentor } from '../../types';
 
 interface OnboardingState {
   // CV step
@@ -23,6 +23,8 @@ interface OnboardingState {
   onboardingComplete: boolean;
   savedOpportunityIds: string[];
   completedOpportunityIds: string[];
+  savedMentors: Mentor[];
+  contactedMentorIds: string[];
 
   setCv: (cvId: string, fileName: string, skills: string[]) => void;
   setSkills: (skills: string[]) => void;
@@ -38,6 +40,8 @@ interface OnboardingState {
   toggleSavedOpp: (id: string) => void;
   markOppComplete: (id: string) => void;
   unmarkOppComplete: (id: string) => void;
+  toggleSavedMentor: (mentor: Mentor) => void;
+  toggleMentorContacted: (id: string) => void;
   reset: () => void;
 }
 
@@ -55,6 +59,8 @@ const initialState = {
   onboardingComplete: false,
   savedOpportunityIds: [],
   completedOpportunityIds: [],
+  savedMentors: [],
+  contactedMentorIds: [],
 };
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
@@ -113,6 +119,28 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   unmarkOppComplete: (id) =>
     set((state) => ({
       completedOpportunityIds: state.completedOpportunityIds.filter((c) => c !== id),
+    })),
+
+  toggleSavedMentor: (mentor) =>
+    set((state) => {
+      const exists = state.savedMentors.some((m) => m.id === mentor.id);
+      if (exists) {
+        return {
+          savedMentors: state.savedMentors.filter((m) => m.id !== mentor.id),
+          contactedMentorIds: state.contactedMentorIds.filter((id) => id !== mentor.id),
+        };
+      }
+      return {
+        savedMentors: [...state.savedMentors, mentor],
+        contactedMentorIds: state.contactedMentorIds,
+      };
+    }),
+
+  toggleMentorContacted: (id) =>
+    set((state) => ({
+      contactedMentorIds: state.contactedMentorIds.includes(id)
+        ? state.contactedMentorIds.filter((c) => c !== id)
+        : [...state.contactedMentorIds, id],
     })),
 
   reset: () => set(initialState),

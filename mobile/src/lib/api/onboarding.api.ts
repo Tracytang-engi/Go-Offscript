@@ -117,6 +117,34 @@ export const novaApi = {
       return { response: "that's really helpful — thanks for sharing. i'll factor that in when finding your paths." };
     }
   },
+
+  linkedinOutreach: async (body: {
+    phase: 'followup' | 'generate';
+    mentorName: string;
+    mentorTitle: string;
+    mentorBio: string;
+    userProfileSummary: string;
+    purpose: 'job' | 'chat' | 'other';
+    purposeDetail?: string;
+    followUpAnswer?: string;
+  }): Promise<{ question?: string; message?: string }> => {
+    try {
+      const r = await apiClient.post<ApiResponse<{ question?: string; message?: string }>>(
+        '/nova/linkedin-outreach',
+        body,
+        { timeout: 60000 }
+      );
+      return r.data.data;
+    } catch {
+      if (body.phase === 'followup') {
+        return { question: 'What is the one outcome you want from this message (e.g. a reply, a referral, or a short call)?' };
+      }
+      return {
+        message:
+          `Hi ${body.mentorName.split(' ')[0]}, I'm exploring roles in your space and really admire the path you've built. I'd love a brief perspective if you ever have 10 minutes. Thank you for reading — I'd be grateful for any guidance.`,
+      };
+    }
+  },
 };
 
 // ─── Career Path ──────────────────────────────────────────────────────────────

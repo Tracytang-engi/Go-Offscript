@@ -28,10 +28,10 @@ export const searchAndStoreMentors = async (userId: string, targetCareer?: strin
     return { mentors: existing, isReal: false };
   }
 
-  // Store mentors — build LinkedIn search URL from name + title + company (never hallucinated)
+  // Store mentors — LinkedIn search URL = name + company only (never hallucinated profile URLs)
   const stored = await Promise.all(
     found.map((m) => {
-      const linkedinUrl = buildLinkedInSearchUrl(m.name, m.title, m.company);
+      const linkedinUrl = buildLinkedInSearchUrl(m.name, m.company);
       const mentorId = `search-${m.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
 
       return prisma.mentor.upsert({

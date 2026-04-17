@@ -40,6 +40,8 @@ export const WaysInScreen = ({ navigation }: Props) => {
     setOpportunities,
     savedOpportunityIds,
     toggleSavedOpp,
+    savedMentors,
+    toggleSavedMentor,
     setOnboardingComplete,
   } = useOnboardingStore();
 
@@ -221,8 +223,8 @@ export const WaysInScreen = ({ navigation }: Props) => {
               <MentorCard
                 key={m.id}
                 mentor={m}
-                saved={savedOpportunityIds.includes(m.id)}
-                onToggleSave={() => toggleSavedOpp(m.id)}
+                saved={savedMentors.some((x) => x.id === m.id)}
+                onToggleSave={() => toggleSavedMentor(m)}
               />
             ))}
           </View>

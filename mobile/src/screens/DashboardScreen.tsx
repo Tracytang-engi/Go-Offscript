@@ -19,7 +19,8 @@ import type { RootStackParamList } from '../navigation/types';
 import { Colors } from '../constants/colors';
 import { useAuthStore } from '../lib/store/auth.store';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
-import type { Opportunity } from '../types';
+import type { Opportunity, Mentor } from '../types';
+import { MentorOutreachModal } from '../components/linkedin/MentorOutreachModal';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -91,9 +92,29 @@ export const DashboardScreen = ({ navigation }: Props) => {
     markOppComplete,
     unmarkOppComplete,
     toggleSavedOpp,
+    savedMentors,
+    contactedMentorIds,
+    toggleMentorContacted,
+    chatSummary,
   } = useOnboardingStore();
 
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
+  const [linkedInOpen, setLinkedInOpen] = useState(false);
+  const [mentorModalVisible, setMentorModalVisible] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+
+  const toContactMentors = savedMentors.filter((m) => !contactedMentorIds.includes(m.id));
+  const contactedMentors = savedMentors.filter((m) => contactedMentorIds.includes(m.id));
+
+  const handleMentorContactToggle = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    toggleMentorContacted(id);
+  };
+
+  const openMentorModal = (m: Mentor) => {
+    setSelectedMentor(m);
+    setMentorModalVisible(true);
+  };
 
   const savedOpps = opportunities.filter((o) => savedOpportunityIds.includes(o.id));
   const pendingOpps = savedOpps.filter((o) => !completedOpportunityIds.includes(o.id));
@@ -191,34 +212,170 @@ export const DashboardScreen = ({ navigation }: Props) => {
         </View>
 
         {/* 3 Quick Buttons */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 28 }}>
-          {QUICK_BUTTONS.map((btn) => (
-            <TouchableOpacity
-              key={btn.label}
-              onPress={() => Alert.alert('Coming soon', "we're building this for you ✨")}
-              style={{
-                flex: 1,
-                backgroundColor: Colors.white,
-                borderRadius: 16,
-                paddingVertical: 18,
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.06,
-                shadowRadius: 4,
-                elevation: 2,
-                gap: 8,
-                aspectRatio: 1,
-              }}
-            >
-              <Text style={{ fontSize: 24 }}>{btn.emoji}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.dark, textAlign: 'center' }}>
-                {btn.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+          {QUICK_BUTTONS.map((btn, idx) => {
+            const isLinkedIn = idx === 2;
+            return (
+              <TouchableOpacity
+                key={btn.label}
+                onPress={() => {
+                  if (isLinkedIn) {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setLinkedInOpen((o) => !o);
+                  } else {
+                    Alert.alert('Coming soon', "we're building this for you ✨");
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: Colors.white,
+                  borderRadius: 16,
+                  paddingVertical: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 4,
+                  elevation: 2,
+                  gap: 8,
+                  aspectRatio: 1,
+                  borderWidth: isLinkedIn && linkedInOpen ? 2.5 : 0,
+                  borderColor: isLinkedIn && linkedInOpen ? Colors.orange : 'transparent',
+                }}
+              >
+                <Text style={{ fontSize: 24 }}>{btn.emoji}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.dark, textAlign: 'center' }}>
+                  {btn.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+
+        {/* LinkedIn Outreach — saved mentors from Ways In */}
+        {linkedInOpen && (
+          <View style={{ marginBottom: 28 }}>
+            <Text style={{ fontSize: 13, color: Colors.muted, marginBottom: 14, lineHeight: 19 }}>
+              starred mentors from Ways In — tap a card for details. gray box = to contact, green ✓ = contacted.
+            </Text>
+
+            <Text style={{ fontSize: 15, fontWeight: '800', color: Colors.dark, marginBottom: 10 }}>
+              to contact
+            </Text>
+            {toContactMentors.length === 0 ? (
+              <Text style={{ fontSize: 13, color: Colors.muted, fontStyle: 'italic', marginBottom: 20 }}>
+                no mentors here yet — save some from Ways In (Mentors tab) ★
+              </Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
+                style={{ marginBottom: 22 }}
+              >
+                {toContactMentors.map((m) => (
+                    <View
+                      key={m.id}
+                      style={{
+                        width: 228,
+                        backgroundColor: Colors.white,
+                        borderRadius: 14,
+                        padding: 12,
+                        flexDirection: 'row',
+                        alignItems: 'flex-start',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.06,
+                        shadowRadius: 3,
+                        elevation: 2,
+                      }}
+                    >
+                      <TouchableOpacity onPress={() => openMentorModal(m)} style={{ flex: 1, paddingRight: 6 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: Colors.dark }} numberOfLines={2}>
+                          {m.name}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: Colors.muted, marginTop: 4, lineHeight: 17 }} numberOfLines={4}>
+                          {m.bio || m.title}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleMentorContactToggle(m.id)}
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 5,
+                          borderWidth: 2,
+                          borderColor: Colors.border,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginTop: 2,
+                        }}
+                      />
+                    </View>
+                ))}
+              </ScrollView>
+            )}
+
+            <Text style={{ fontSize: 15, fontWeight: '800', color: Colors.dark, marginBottom: 10 }}>
+              contacted
+            </Text>
+            {contactedMentors.length === 0 ? (
+              <Text style={{ fontSize: 13, color: Colors.muted, fontStyle: 'italic' }}>
+                when you tick the box, mentors move here
+              </Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
+              >
+                {contactedMentors.map((m) => (
+                    <View
+                      key={m.id}
+                      style={{
+                        width: 228,
+                        backgroundColor: Colors.white,
+                        borderRadius: 14,
+                        padding: 12,
+                        flexDirection: 'row',
+                        alignItems: 'flex-start',
+                        opacity: 0.88,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 3,
+                        elevation: 1,
+                      }}
+                    >
+                      <TouchableOpacity onPress={() => openMentorModal(m)} style={{ flex: 1, paddingRight: 6 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: Colors.dark }} numberOfLines={2}>
+                          {m.name}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: Colors.muted, marginTop: 4, lineHeight: 17 }} numberOfLines={4}>
+                          {m.bio || m.title}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleMentorContactToggle(m.id)}
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 5,
+                          backgroundColor: '#22C55E',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginTop: 2,
+                        }}
+                      >
+                        <Text style={{ fontSize: 11, color: '#fff', fontWeight: '900' }}>✓</Text>
+                      </TouchableOpacity>
+                    </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        )}
 
         {/* Horizontal Saved List */}
         {savedOpps.length > 0 && (
@@ -426,6 +583,17 @@ export const DashboardScreen = ({ navigation }: Props) => {
           </View>
         </View>
       </Modal>
+
+      <MentorOutreachModal
+        visible={mentorModalVisible}
+        mentor={selectedMentor}
+        chatSummary={chatSummary}
+        isContacted={!!selectedMentor && contactedMentorIds.includes(selectedMentor.id)}
+        onClose={() => {
+          setMentorModalVisible(false);
+          setSelectedMentor(null);
+        }}
+      />
     </SafeAreaView>
   );
 };

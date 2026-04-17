@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Linking } from 'react-native';
 import { Colors } from '../../constants/colors';
 import type { Mentor } from '../../types';
+import { buildMentorLinkedInSearchUrl } from '../../lib/mentorUtils';
 
 interface MentorCardProps {
   mentor: Mentor;
@@ -18,9 +19,7 @@ export const MentorCard = ({ mentor, saved, onToggleSave }: MentorCardProps) => 
     .slice(0, 2);
 
   const handleChat = () => {
-    const url = mentor.linkedinUrl
-      ?? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(mentor.name)}`;
-    Linking.openURL(url).catch(() => {});
+    Linking.openURL(buildMentorLinkedInSearchUrl(mentor)).catch(() => {});
   };
 
   return (

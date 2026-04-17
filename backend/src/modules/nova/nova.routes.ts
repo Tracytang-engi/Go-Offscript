@@ -8,5 +8,6 @@ router.use(authenticate);
 router.post('/profile', novaController.generateProfile);
 router.post('/analyze', novaController.analyze);
 router.post('/chat', novaController.chat);
+router.post('/linkedin-outreach', novaController.linkedinOutreach);
 
 export default router;

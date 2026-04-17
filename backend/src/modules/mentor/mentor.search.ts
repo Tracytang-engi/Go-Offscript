@@ -12,9 +12,9 @@ export interface FoundMentor {
   yearsExperience: number;
 }
 
-// Build a guaranteed-working LinkedIn people search URL from name + role context
-export const buildLinkedInSearchUrl = (name: string, title: string, company: string): string => {
-  const keywords = [name, title, company].filter(Boolean).join(' ');
+// LinkedIn people search: name + company only (title adds noise and hurts match rate)
+export const buildLinkedInSearchUrl = (name: string, company: string): string => {
+  const keywords = [name, company].filter(Boolean).join(' ');
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
 };
 
