@@ -27,7 +27,7 @@ Output format (strict JSON array):
   {
     "title": "exact program / role / event name",
     "organization": "real organization name",
-    "description": "1-2 sentences: what it is AND why it matches the target role",
+    "description": "1 concise sentence: what it is and why it fits the target role",
     "type": "INTERNSHIP | FELLOWSHIP | SHORT_PROJECT | COACHING | MEETUP",
     "deadline": "e.g. 'rolling', 'closes June 2025', 'annual — opens September', or null",
     "url": "real application or info URL, or null if uncertain",

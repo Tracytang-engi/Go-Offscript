@@ -38,43 +38,65 @@ const CONTENT_OPP_TYPES: Record<ContentType, string[]> = {
 export const WaysInScreen = ({ navigation: _navigation }: Props) => {
   const { likedPaths, setOpportunities } = useOnboardingStore();
 
-  // Layer 1: which career is selected ('' = all)
+  // Layer 1: which career is selected
   const [selectedCareer, setSelectedCareer] = useState<string>('all');
   // Layer 2: content type
   const [contentType, setContentType] = useState<ContentType>('all');
 
-  // Data
-  const [allOpps, setAllOpps] = useState<Opportunity[]>([]);
-  const [mentors, setMentors] = useState<Mentor[]>([]);
-
-  // Loading per career selection
+  // Opportunities cached by career key (parallel-fetched on mount)
+  const [oppsByCareer, setOppsByCareer] = useState<Record<string, Opportunity[]>>({});
   const [oppsLoading, setOppsLoading] = useState(true);
-  const [mentorsLoading, setMentorsLoading] = useState(false);
   const [oppsIsReal, setOppsIsReal] = useState(false);
-  const [mentorsIsReal, setMentorsIsReal] = useState(false);
 
-  // Track which careers we've already fetched mentors for
+  // Mentors — lazy loaded when Mentors tab is selected (unchanged)
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [mentorsLoading, setMentorsLoading] = useState(false);
+  const [mentorsIsReal, setMentorsIsReal] = useState(false);
   const fetchedMentorCareers = useRef<Set<string>>(new Set());
 
   // Career chips from liked paths
   const careerChips = ['all', ...likedPaths];
 
-  // Fetch opportunities when selectedCareer changes
-  const fetchOpps = async (career: string) => {
+  // On mount: parallel fetch one search per liked career (or one general if none)
+  useEffect(() => {
+    const careers = likedPaths.length > 0 ? likedPaths : [];
+    // Always include a general (no targetCareer) search for the "all" view
+    const targets: Array<string | undefined> = [undefined, ...careers];
+
     setOppsLoading(true);
-    const target = career === 'all' ? undefined : career;
-    const result = await searchOpportunities(target);
-    setAllOpps(result.opportunities);
-    setOpportunities(result.opportunities);
-    setOppsIsReal(result.isReal);
-    setOppsLoading(false);
+    Promise.all(targets.map((t) => searchOpportunities(t)))
+      .then((results) => {
+        const byCareer: Record<string, Opportunity[]> = {};
+        targets.forEach((t, i) => {
+          byCareer[t ?? 'all'] = results[i].opportunities;
+        });
+        setOppsByCareer(byCareer);
+        setOpportunities(results.flatMap((r) => r.opportunities));
+        setOppsIsReal(results.some((r) => r.isReal));
+        setOppsLoading(false);
+      });
+  }, []);
+
+  // Career chip tap — local switch only, no API call
+  const handleCareerSelect = (career: string) => {
+    setSelectedCareer(career);
+    setContentType('all');
+    // Reset mentor cache so Mentors tab re-fetches for new career
+    fetchedMentorCareers.current.delete(career);
   };
 
-  // Fetch mentors lazily (only when mentors tab selected, once per career)
+  // Content type tap — local filter; Mentors tab triggers lazy LinkedIn search
+  const handleContentType = (type: ContentType) => {
+    setContentType(type);
+    if (type === 'mentors' && !fetchedMentorCareers.current.has(selectedCareer)) {
+      fetchMentors(selectedCareer);
+    }
+  };
+
+  // Fetch mentors lazily — unchanged behaviour
   const fetchMentors = async (career: string) => {
-    const key = career;
-    if (fetchedMentorCareers.current.has(key)) return;
-    fetchedMentorCareers.current.add(key);
+    if (fetchedMentorCareers.current.has(career)) return;
+    fetchedMentorCareers.current.add(career);
     setMentorsLoading(true);
     const target = career === 'all' ? undefined : career;
     const result = await mentorApi.search(target);
@@ -83,27 +105,14 @@ export const WaysInScreen = ({ navigation: _navigation }: Props) => {
     setMentorsLoading(false);
   };
 
-  useEffect(() => { fetchOpps('all'); }, []);
+  // Resolve current opportunity list from cache (instant, no loading)
+  const careerKey = selectedCareer === 'all' ? 'all' : selectedCareer;
+  const currentOpps = oppsByCareer[careerKey] ?? oppsByCareer['all'] ?? [];
 
-  const handleCareerSelect = (career: string) => {
-    setSelectedCareer(career);
-    setContentType('all');
-    fetchOpps(career);
-    fetchedMentorCareers.current.clear(); // reset mentor cache on career change
-  };
-
-  const handleContentType = (type: ContentType) => {
-    setContentType(type);
-    if (type === 'mentors' && !fetchedMentorCareers.current.has(selectedCareer)) {
-      fetchMentors(selectedCareer);
-    }
-  };
-
-  // Filter opps by content type
-  const filteredOpps = allOpps.filter((o) => {
-    const types = CONTENT_OPP_TYPES[contentType];
-    return types.includes(o.type);
-  });
+  // Filter by content type
+  const filteredOpps = currentOpps.filter((o) =>
+    CONTENT_OPP_TYPES[contentType].includes(o.type)
+  );
 
   const showMentors = contentType === 'mentors';
   const isLoading = showMentors ? mentorsLoading : oppsLoading;
