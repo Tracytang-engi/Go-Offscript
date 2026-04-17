@@ -37,6 +37,7 @@ interface OnboardingState {
   setOnboardingComplete: () => Promise<void>;
   toggleSavedOpp: (id: string) => void;
   markOppComplete: (id: string) => void;
+  unmarkOppComplete: (id: string) => void;
   reset: () => void;
 }
 
@@ -107,6 +108,11 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       completedOpportunityIds: state.completedOpportunityIds.includes(id)
         ? state.completedOpportunityIds
         : [...state.completedOpportunityIds, id],
+    })),
+
+  unmarkOppComplete: (id) =>
+    set((state) => ({
+      completedOpportunityIds: state.completedOpportunityIds.filter((c) => c !== id),
     })),
 
   reset: () => set(initialState),

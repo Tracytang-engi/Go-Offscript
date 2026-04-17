@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Platform,
   UIManager,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -42,10 +43,55 @@ const TYPE_EMOJI: Record<string, string> = {
   MEETUP: '📍',
 };
 
+// ─── Swipeable row ────────────────────────────────────────────────────────────
+// Left-swipe reveals a yellow ★ — tapping it unsaves and closes the row.
+interface SwipeableRowProps {
+  onUnsave: () => void;
+  children: React.ReactNode;
+}
+
+const SwipeableRow = ({ onUnsave, children }: SwipeableRowProps) => {
+  const ref = useRef<Swipeable>(null);
+
+  const renderRightActions = () => (
+    <TouchableOpacity
+      onPress={() => {
+        ref.current?.close();
+        onUnsave();
+      }}
+      style={{
+        width: 64,
+        marginBottom: 8,
+        borderRadius: 14,
+        backgroundColor: '#FBBF24',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontSize: 22 }}>★</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <Swipeable ref={ref} renderRightActions={renderRightActions} friction={2} rightThreshold={40}>
+      {children}
+    </Swipeable>
+  );
+};
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+
 export const DashboardScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
-  const { opportunities, savedOpportunityIds, completedOpportunityIds, markOppComplete } = useOnboardingStore();
+  const {
+    opportunities,
+    savedOpportunityIds,
+    completedOpportunityIds,
+    markOppComplete,
+    unmarkOppComplete,
+    toggleSavedOpp,
+  } = useOnboardingStore();
 
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
 
@@ -53,9 +99,18 @@ export const DashboardScreen = ({ navigation }: Props) => {
   const pendingOpps = savedOpps.filter((o) => !completedOpportunityIds.includes(o.id));
   const completedOpps = savedOpps.filter((o) => completedOpportunityIds.includes(o.id));
 
-  const handleCheck = (id: string) => {
+  const handleToggleComplete = (id: string, isCompleted: boolean) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    markOppComplete(id);
+    if (isCompleted) {
+      unmarkOppComplete(id);   // move back to Pending
+    } else {
+      markOppComplete(id);     // move to Completed
+    }
+  };
+
+  const handleUnsave = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    toggleSavedOpp(id);        // removes from savedOpportunityIds → row disappears
   };
 
   const handleApply = (url?: string | null) => {
@@ -66,10 +121,63 @@ export const DashboardScreen = ({ navigation }: Props) => {
     }
   };
 
+  // ── Row component (shared by Pending and Completed) ──────────────────────
+  const AppRow = ({ opp, isCompleted }: { opp: Opportunity; isCompleted: boolean }) => (
+    <SwipeableRow onUnsave={() => handleUnsave(opp.id)}>
+      <View
+        style={{
+          backgroundColor: Colors.white,
+          borderRadius: 14,
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          marginBottom: 8,
+          flexDirection: 'row',
+          alignItems: 'center',
+          opacity: isCompleted ? 0.72 : 1,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 3,
+          elevation: 1,
+        }}
+      >
+        {/* Title + org (tappable → detail modal) */}
+        <TouchableOpacity onPress={() => setSelectedOpp(opp)} style={{ flex: 1 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.dark }}>
+            {TYPE_EMOJI[opp.type] ?? '📋'} {opp.title}
+          </Text>
+          <Text style={{ fontSize: 12, color: Colors.muted, marginTop: 2 }}>
+            {opp.organization}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Checkbox — toggles between pending and completed */}
+        <TouchableOpacity
+          onPress={() => handleToggleComplete(opp.id, isCompleted)}
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            backgroundColor: isCompleted ? '#22C55E' : 'transparent',
+            borderWidth: isCompleted ? 0 : 2,
+            borderColor: Colors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: 12,
+          }}
+        >
+          {isCompleted && (
+            <Text style={{ fontSize: 13, color: '#fff', fontWeight: '800' }}>✓</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </SwipeableRow>
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream }}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -177,52 +285,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
             </Text>
           ) : (
             pendingOpps.map((opp) => (
-              <View
-                key={opp.id}
-                style={{
-                  backgroundColor: Colors.white,
-                  borderRadius: 14,
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  marginBottom: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 3,
-                  elevation: 1,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => setSelectedOpp(opp)}
-                  style={{ flex: 1 }}
-                >
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.dark }}>
-                    {TYPE_EMOJI[opp.type] ?? '📋'} {opp.title}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: Colors.muted, marginTop: 2 }}>
-                    {opp.organization}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Checkbox */}
-                <TouchableOpacity
-                  onPress={() => handleCheck(opp.id)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 6,
-                    borderWidth: 2,
-                    borderColor: Colors.border,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 12, color: Colors.muted }}>□</Text>
-                </TouchableOpacity>
-              </View>
+              <AppRow key={opp.id} opp={opp} isCompleted={false} />
             ))
           )}
         </View>
@@ -234,46 +297,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
               Completed Applications
             </Text>
             {completedOpps.map((opp) => (
-              <View
-                key={opp.id}
-                style={{
-                  backgroundColor: Colors.white,
-                  borderRadius: 14,
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  marginBottom: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  opacity: 0.75,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => setSelectedOpp(opp)}
-                  style={{ flex: 1 }}
-                >
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.dark }}>
-                    {TYPE_EMOJI[opp.type] ?? '📋'} {opp.title}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: Colors.muted, marginTop: 2 }}>
-                    {opp.organization}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Green checkmark */}
-                <View
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 6,
-                    backgroundColor: '#22C55E',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: '#fff', fontWeight: '800' }}>✓</Text>
-                </View>
-              </View>
+              <AppRow key={opp.id} opp={opp} isCompleted={true} />
             ))}
           </View>
         )}
@@ -285,7 +309,6 @@ export const DashboardScreen = ({ navigation }: Props) => {
         style={{
           position: 'absolute',
           bottom: insets.bottom + 20,
-          alignSelf: 'center',
           left: 0,
           right: 0,
           alignItems: 'center',
@@ -329,7 +352,6 @@ export const DashboardScreen = ({ navigation }: Props) => {
               maxHeight: '75%',
             }}
           >
-            {/* Close button */}
             <TouchableOpacity
               onPress={() => setSelectedOpp(null)}
               style={{ position: 'absolute', top: 16, right: 20, zIndex: 10 }}
