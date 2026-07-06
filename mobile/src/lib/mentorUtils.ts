@@ -8,8 +8,6 @@ export const companyFromMentorTitle = (title: string): string => {
 };
 
 export const buildMentorLinkedInSearchUrl = (mentor: Mentor): string => {
-  if (mentor.linkedinUrl) return mentor.linkedinUrl;
-  const company = companyFromMentorTitle(mentor.title);
-  const keywords = [mentor.name, company].filter(Boolean).join(' ');
-  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
+  // Name only — adding title/company keywords hurts search accuracy and causes no-match results
+  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(mentor.name)}`;
 };

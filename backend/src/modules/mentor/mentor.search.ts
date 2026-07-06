@@ -12,10 +12,9 @@ export interface FoundMentor {
   yearsExperience: number;
 }
 
-// LinkedIn people search: name + company only (title adds noise and hurts match rate)
-export const buildLinkedInSearchUrl = (name: string, company: string): string => {
-  const keywords = [name, company].filter(Boolean).join(' ');
-  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
+// LinkedIn people search: name only — fewer keywords = better match rate
+export const buildLinkedInSearchUrl = (name: string, _company: string): string => {
+  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(name)}`;
 };
 
 const SYSTEM_PROMPT = `You are a professional mentor researcher. Find REAL, specific professionals who work in a given field and would make great mentors for early-career people.
