@@ -21,6 +21,7 @@ import { useAuthStore } from '../lib/store/auth.store';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
 import type { Opportunity, Mentor } from '../types';
 import { MentorOutreachModal } from '../components/linkedin/MentorOutreachModal';
+import { MyPathModal } from '../components/dashboard/MyPathModal';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -96,10 +97,13 @@ export const DashboardScreen = ({ navigation }: Props) => {
     contactedMentorIds,
     toggleMentorContacted,
     chatSummary,
+    careerPath,
+    likedPaths,
   } = useOnboardingStore();
 
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
   const [linkedInOpen, setLinkedInOpen] = useState(false);
+  const [myPathOpen, setMyPathOpen] = useState(false);
   const [mentorModalVisible, setMentorModalVisible] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
@@ -215,6 +219,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
           {QUICK_BUTTONS.map((btn, idx) => {
             const isLinkedIn = idx === 2;
+            const isMyPath = idx === 1;
             return (
               <TouchableOpacity
                 key={btn.label}
@@ -222,6 +227,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   if (isLinkedIn) {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     setLinkedInOpen((o) => !o);
+                  } else if (isMyPath) {
+                    setMyPathOpen(true);
                   } else {
                     Alert.alert('Coming soon', "we're building this for you ✨");
                   }
@@ -592,6 +599,17 @@ export const DashboardScreen = ({ navigation }: Props) => {
         onClose={() => {
           setMentorModalVisible(false);
           setSelectedMentor(null);
+        }}
+      />
+
+      <MyPathModal
+        visible={myPathOpen}
+        careerPath={careerPath}
+        likedPaths={likedPaths}
+        onClose={() => setMyPathOpen(false)}
+        onReplan={() => {
+          setMyPathOpen(false);
+          navigation.navigate('Upload');
         }}
       />
     </SafeAreaView>
