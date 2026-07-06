@@ -25,6 +25,11 @@ interface OnboardingState {
   completedOpportunityIds: string[];
   savedMentors: Mentor[];
   contactedMentorIds: string[];
+  // Profile (local only)
+  profileName: string;
+  profileAge: string;
+  profileRegion: string;
+  profileSchool: string;
 
   setCv: (cvId: string, fileName: string, skills: string[]) => void;
   setSkills: (skills: string[]) => void;
@@ -42,6 +47,7 @@ interface OnboardingState {
   unmarkOppComplete: (id: string) => void;
   toggleSavedMentor: (mentor: Mentor) => void;
   toggleMentorContacted: (id: string) => void;
+  setProfile: (fields: { name?: string; age?: string; region?: string; school?: string }) => void;
   reset: () => void;
 }
 
@@ -61,6 +67,10 @@ const initialState = {
   completedOpportunityIds: [],
   savedMentors: [],
   contactedMentorIds: [],
+  profileName: '',
+  profileAge: '',
+  profileRegion: '',
+  profileSchool: '',
 };
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
@@ -119,6 +129,14 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   unmarkOppComplete: (id) =>
     set((state) => ({
       completedOpportunityIds: state.completedOpportunityIds.filter((c) => c !== id),
+    })),
+
+  setProfile: (fields) =>
+    set((state) => ({
+      profileName:   fields.name   !== undefined ? fields.name   : state.profileName,
+      profileAge:    fields.age    !== undefined ? fields.age    : state.profileAge,
+      profileRegion: fields.region !== undefined ? fields.region : state.profileRegion,
+      profileSchool: fields.school !== undefined ? fields.school : state.profileSchool,
     })),
 
   toggleSavedMentor: (mentor) =>

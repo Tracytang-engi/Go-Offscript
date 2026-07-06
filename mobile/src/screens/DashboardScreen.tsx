@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  TextInput,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -99,6 +100,12 @@ export const DashboardScreen = ({ navigation }: Props) => {
     chatSummary,
     careerPath,
     likedPaths,
+    profileName,
+    profileAge,
+    profileRegion,
+    profileSchool,
+    cvFileName,
+    setProfile,
   } = useOnboardingStore();
 
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
@@ -106,6 +113,22 @@ export const DashboardScreen = ({ navigation }: Props) => {
   const [mentorModalVisible, setMentorModalVisible] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
   const [myPathVisible, setMyPathVisible] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
+
+  // Local draft for profile editing — synced from store when modal opens
+  const [draftName, setDraftName] = useState('');
+  const [draftAge, setDraftAge] = useState('');
+  const [draftRegion, setDraftRegion] = useState('');
+  const [draftSchool, setDraftSchool] = useState('');
+
+  useEffect(() => {
+    if (profileVisible) {
+      setDraftName(profileName || user?.name || '');
+      setDraftAge(profileAge);
+      setDraftRegion(profileRegion);
+      setDraftSchool(profileSchool);
+    }
+  }, [profileVisible]);
 
   const toContactMentors = savedMentors.filter((m) => !contactedMentorIds.includes(m.id));
   const contactedMentors = savedMentors.filter((m) => contactedMentorIds.includes(m.id));
@@ -226,6 +249,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   if (isLinkedIn) {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     setLinkedInOpen((o) => !o);
+                  } else if (idx === 0) {
+                    setProfileVisible(true);
                   } else if (idx === 1) {
                     setMyPathVisible(true);
                   } else {
@@ -600,6 +625,167 @@ export const DashboardScreen = ({ navigation }: Props) => {
           setSelectedMentor(null);
         }}
       />
+
+      {/* ── Profile Modal ──────────────────────────────────────────────── */}
+      <Modal
+        visible={profileVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setProfileVisible(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View style={{
+            backgroundColor: Colors.cream,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            maxHeight: '88%',
+          }}>
+            {/* Handle */}
+            <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border }} />
+            </View>
+
+            {/* Header */}
+            <View style={{
+              flexDirection: 'row', justifyContent: 'space-between',
+              alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12,
+            }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: Colors.dark }}>
+                your profile 👤
+              </Text>
+              <TouchableOpacity onPress={() => setProfileVisible(false)} hitSlop={12}>
+                <Text style={{ fontSize: 22, color: Colors.muted }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Editable fields */}
+              {([
+                { label: 'name', value: draftName, onChange: setDraftName, placeholder: 'your name', keyboardType: 'default' },
+                { label: 'age', value: draftAge, onChange: setDraftAge, placeholder: 'e.g. 22', keyboardType: 'numeric' },
+                { label: 'region', value: draftRegion, onChange: setDraftRegion, placeholder: 'e.g. London, UK', keyboardType: 'default' },
+                { label: 'school', value: draftSchool, onChange: setDraftSchool, placeholder: 'e.g. UCL', keyboardType: 'default' },
+              ] as const).map((field) => (
+                <View key={field.label} style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    {field.label}
+                  </Text>
+                  <TextInput
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    placeholder={field.placeholder}
+                    placeholderTextColor={Colors.border}
+                    keyboardType={field.keyboardType as any}
+                    style={{
+                      backgroundColor: Colors.white,
+                      borderRadius: 12,
+                      paddingHorizontal: 16,
+                      paddingVertical: 13,
+                      fontSize: 15,
+                      fontWeight: '600',
+                      color: Colors.dark,
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                    }}
+                  />
+                </View>
+              ))}
+
+              {/* CV row */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  cv
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setProfile({ name: draftName, age: draftAge, region: draftRegion, school: draftSchool });
+                    setProfileVisible(false);
+                    navigation.navigate('Upload');
+                  }}
+                  style={{
+                    backgroundColor: Colors.white,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 13,
+                    borderWidth: 1,
+                    borderColor: Colors.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: cvFileName ? Colors.dark : Colors.muted, fontWeight: '600', flex: 1 }} numberOfLines={1}>
+                    {cvFileName ?? 'no CV uploaded'}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: Colors.orange, fontWeight: '700', marginLeft: 8 }}>
+                    {cvFileName ? 're-upload →' : 'upload →'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Settings row */}
+              <View style={{ marginBottom: 24 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  settings
+                </Text>
+                <TouchableOpacity
+                  onPress={() => Alert.alert('building', "we're working on settings for you ✨")}
+                  style={{
+                    backgroundColor: Colors.white,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 13,
+                    borderWidth: 1,
+                    borderColor: Colors.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: Colors.muted, fontWeight: '600' }}>
+                    app settings
+                  </Text>
+                  <Text style={{ fontSize: 13, color: Colors.muted }}>›</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+
+            {/* Save button */}
+            <View style={{
+              position: 'absolute',
+              bottom: insets.bottom + 20,
+              left: 20,
+              right: 20,
+            }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setProfile({ name: draftName, age: draftAge, region: draftRegion, school: draftSchool });
+                  setProfileVisible(false);
+                }}
+                style={{
+                  backgroundColor: Colors.orange,
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  shadowColor: Colors.orange,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '800', color: Colors.white }}>
+                  save →
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── My Path Modal ───────────────────────────────────────────────── */}
       <Modal
