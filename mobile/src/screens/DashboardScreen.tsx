@@ -21,7 +21,7 @@ import { useAuthStore } from '../lib/store/auth.store';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
 import type { Opportunity, Mentor } from '../types';
 import { MentorOutreachModal } from '../components/linkedin/MentorOutreachModal';
-import { MyPathModal } from '../components/dashboard/MyPathModal';
+import type { PathScore } from '../types';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -103,9 +103,9 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
   const [linkedInOpen, setLinkedInOpen] = useState(false);
-  const [myPathOpen, setMyPathOpen] = useState(false);
   const [mentorModalVisible, setMentorModalVisible] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [myPathVisible, setMyPathVisible] = useState(false);
 
   const toContactMentors = savedMentors.filter((m) => !contactedMentorIds.includes(m.id));
   const contactedMentors = savedMentors.filter((m) => contactedMentorIds.includes(m.id));
@@ -219,7 +219,6 @@ export const DashboardScreen = ({ navigation }: Props) => {
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
           {QUICK_BUTTONS.map((btn, idx) => {
             const isLinkedIn = idx === 2;
-            const isMyPath = idx === 1;
             return (
               <TouchableOpacity
                 key={btn.label}
@@ -227,8 +226,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   if (isLinkedIn) {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     setLinkedInOpen((o) => !o);
-                  } else if (isMyPath) {
-                    setMyPathOpen(true);
+                  } else if (idx === 1) {
+                    setMyPathVisible(true);
                   } else {
                     Alert.alert('Coming soon', "we're building this for you ✨");
                   }
@@ -602,16 +601,193 @@ export const DashboardScreen = ({ navigation }: Props) => {
         }}
       />
 
-      <MyPathModal
-        visible={myPathOpen}
-        careerPath={careerPath}
-        likedPaths={likedPaths}
-        onClose={() => setMyPathOpen(false)}
-        onReplan={() => {
-          setMyPathOpen(false);
-          navigation.navigate('Upload');
-        }}
-      />
+      {/* ── My Path Modal ───────────────────────────────────────────────── */}
+      <Modal
+        visible={myPathVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setMyPathVisible(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View
+            style={{
+              backgroundColor: Colors.cream,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              maxHeight: '88%',
+            }}
+          >
+            {/* Handle */}
+            <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border }} />
+            </View>
+
+            {/* Header */}
+            <View style={{
+              flexDirection: 'row', justifyContent: 'space-between',
+              alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12,
+            }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: Colors.dark }}>
+                your paths ✦
+              </Text>
+              <TouchableOpacity onPress={() => setMyPathVisible(false)} hitSlop={12}>
+                <Text style={{ fontSize: 22, color: Colors.muted }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
+            >
+              {!careerPath ? (
+                <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+                  <Text style={{ fontSize: 32, marginBottom: 12 }}>🗺️</Text>
+                  <Text style={{ fontSize: 15, color: Colors.muted, textAlign: 'center' }}>
+                    no paths yet — complete the onboarding flow first
+                  </Text>
+                </View>
+              ) : (
+                careerPath.pathScores.map((score: PathScore, idx: number) => {
+                  const isLiked = likedPaths.includes(score.pathTitle);
+                  const isSkipped = !isLiked;
+                  const matchColor =
+                    score.matchScore >= 80 ? '#22C55E'
+                    : score.matchScore >= 60 ? Colors.orange
+                    : Colors.muted;
+
+                  return (
+                    <View
+                      key={score.id}
+                      style={{
+                        backgroundColor: Colors.white,
+                        borderRadius: 18,
+                        padding: 18,
+                        marginBottom: 14,
+                        borderWidth: isLiked ? 2 : 1,
+                        borderColor: isLiked ? Colors.orange : Colors.border,
+                        opacity: isSkipped && likedPaths.length > 0 ? 0.7 : 1,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.06,
+                        shadowRadius: 6,
+                        elevation: 3,
+                      }}
+                    >
+                      {/* Title row */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: Colors.dark, flex: 1, marginRight: 8 }}>
+                          {score.pathTitle}
+                        </Text>
+                        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                          {/* Match score */}
+                          <View style={{
+                            backgroundColor: matchColor + '20',
+                            borderRadius: 999,
+                            paddingHorizontal: 10,
+                            paddingVertical: 4,
+                          }}>
+                            <Text style={{ fontSize: 12, fontWeight: '800', color: matchColor }}>
+                              {score.matchScore}% match
+                            </Text>
+                          </View>
+                          {/* Liked / skipped badge */}
+                          {likedPaths.length > 0 && (
+                            <View style={{
+                              backgroundColor: isLiked ? Colors.orangeLight : '#F3F4F6',
+                              borderRadius: 999,
+                              paddingHorizontal: 8,
+                              paddingVertical: 3,
+                            }}>
+                              <Text style={{ fontSize: 11, fontWeight: '700', color: isLiked ? Colors.orange : Colors.muted }}>
+                                {isLiked ? '✓ liked' : '✕ skipped'}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+
+                      {/* Description */}
+                      {score.description ? (
+                        <Text style={{ fontSize: 13, color: Colors.dark, lineHeight: 20, marginBottom: 12 }}>
+                          {score.description}
+                        </Text>
+                      ) : null}
+
+                      {/* Skills already have */}
+                      {score.skillsAlreadyHave && score.skillsAlreadyHave.length > 0 && (
+                        <View style={{ marginBottom: 10 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#22C55E', marginBottom: 5 }}>
+                            skills you already have
+                          </Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                            {score.skillsAlreadyHave.map((s) => (
+                              <View key={s} style={{
+                                backgroundColor: '#D1FAE5', borderRadius: 999,
+                                paddingHorizontal: 10, paddingVertical: 3,
+                              }}>
+                                <Text style={{ fontSize: 11, color: '#065F46', fontWeight: '600' }}>{s}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      {/* Skills gap */}
+                      {score.skillsGap && score.skillsGap.length > 0 && (
+                        <View>
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.orange, marginBottom: 5 }}>
+                            skills to develop
+                          </Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                            {score.skillsGap.map((s) => (
+                              <View key={s} style={{
+                                backgroundColor: Colors.orangeLight, borderRadius: 999,
+                                paddingHorizontal: 10, paddingVertical: 3,
+                              }}>
+                                <Text style={{ fontSize: 11, color: Colors.orange, fontWeight: '600' }}>{s}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+
+            {/* Floating re-plan button */}
+            <View style={{
+              position: 'absolute',
+              bottom: insets.bottom + 20,
+              left: 20,
+              right: 20,
+            }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setMyPathVisible(false);
+                  navigation.navigate('Upload');
+                }}
+                style={{
+                  backgroundColor: Colors.orange,
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  shadowColor: Colors.orange,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.35,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '800', color: Colors.white, letterSpacing: 0.3 }}>
+                  re-plan my path →
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

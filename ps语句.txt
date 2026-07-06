@@ -1,0 +1,7 @@
+cd "c:\Users\13410\Desktop\Go_Offscript"
+git add -A
+git commit -m "feat: My Path modal with re-plan button; fix LinkedIn name-only search"
+git push origin main
+
+cd "c:\Users\13410\Desktop\Go_Offscript\mobile"
+npx expo start --lan --clear
