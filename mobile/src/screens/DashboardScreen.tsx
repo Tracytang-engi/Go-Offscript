@@ -100,6 +100,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
     chatSummary,
     careerPath,
     likedPaths,
+    skills,
+    setSkills,
     profileName,
     profileAge,
     profileRegion,
@@ -121,12 +123,18 @@ export const DashboardScreen = ({ navigation }: Props) => {
   const [draftRegion, setDraftRegion] = useState('');
   const [draftSchool, setDraftSchool] = useState('');
 
+  // Skills editing state
+  const [skillsEditing, setSkillsEditing] = useState(false);
+  const [draftSkillsText, setDraftSkillsText] = useState('');
+
   useEffect(() => {
     if (profileVisible) {
       setDraftName(profileName || user?.name || '');
       setDraftAge(profileAge);
       setDraftRegion(profileRegion);
       setDraftSchool(profileSchool);
+      setSkillsEditing(false);
+      setDraftSkillsText(skills.join(', '));
     }
   }, [profileVisible]);
 
@@ -663,7 +671,37 @@ export const DashboardScreen = ({ navigation }: Props) => {
               contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Editable fields */}
+              {/* ── Token / Payment row ──────────────────────────────────── */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: Colors.white,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                marginBottom: 20,
+                borderWidth: 1,
+                borderColor: Colors.border,
+              }}>
+                <View>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>tokens</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '800', color: Colors.dark, marginTop: 2 }}>0</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => Alert.alert('Top-up', 'Payment feature coming soon!')}
+                  style={{
+                    backgroundColor: Colors.orange,
+                    borderRadius: 10,
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.white }}>top up →</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* ── Editable fields ─────────────────────────────────────── */}
               {([
                 { label: 'name', value: draftName, onChange: setDraftName, placeholder: 'your name', keyboardType: 'default' },
                 { label: 'age', value: draftAge, onChange: setDraftAge, placeholder: 'e.g. 22', keyboardType: 'numeric' },
@@ -695,7 +733,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                 </View>
               ))}
 
-              {/* CV row */}
+              {/* ── CV row ──────────────────────────────────────────────── */}
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   cv
@@ -727,13 +765,117 @@ export const DashboardScreen = ({ navigation }: Props) => {
                 </TouchableOpacity>
               </View>
 
-              {/* Settings row */}
+              {/* ── Skills tags ─────────────────────────────────────────── */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  extracted skills
+                </Text>
+                {skills.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                    {skills.map((s) => (
+                      <View key={s} style={{
+                        backgroundColor: Colors.orangeLight,
+                        borderRadius: 999,
+                        paddingHorizontal: 12,
+                        paddingVertical: 5,
+                      }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.orange }}>{s}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={{ fontSize: 13, color: Colors.muted, marginBottom: 10 }}>
+                    no skills extracted yet — upload a CV first
+                  </Text>
+                )}
+
+                {skillsEditing ? (
+                  <View>
+                    <TextInput
+                      value={draftSkillsText}
+                      onChangeText={setDraftSkillsText}
+                      placeholder="e.g. Python, Data Analysis, Communication"
+                      placeholderTextColor={Colors.border}
+                      multiline
+                      style={{
+                        backgroundColor: Colors.white,
+                        borderRadius: 12,
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        fontSize: 14,
+                        color: Colors.dark,
+                        borderWidth: 1,
+                        borderColor: Colors.orange,
+                        marginBottom: 8,
+                        minHeight: 72,
+                        textAlignVertical: 'top',
+                      }}
+                    />
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const updated = draftSkillsText
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean);
+                          setSkills(updated);
+                          setSkillsEditing(false);
+                        }}
+                        style={{
+                          flex: 1,
+                          backgroundColor: Colors.orange,
+                          borderRadius: 10,
+                          paddingVertical: 10,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.white }}>save skills</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setSkillsEditing(false)}
+                        style={{
+                          paddingHorizontal: 16,
+                          borderRadius: 10,
+                          paddingVertical: 10,
+                          alignItems: 'center',
+                          borderWidth: 1,
+                          borderColor: Colors.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.muted }}>cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setDraftSkillsText(skills.join(', '));
+                      setSkillsEditing(true);
+                    }}
+                    style={{
+                      backgroundColor: Colors.orange,
+                      borderRadius: 10,
+                      paddingVertical: 10,
+                      alignItems: 'center',
+                      alignSelf: 'flex-start',
+                      paddingHorizontal: 16,
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.white }}>update skills →</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* ── Settings row ────────────────────────────────────────── */}
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   settings
                 </Text>
                 <TouchableOpacity
-                  onPress={() => Alert.alert('building', "we're working on settings for you ✨")}
+                  onPress={() => {
+                    setProfileVisible(false);
+                    navigation.navigate('Settings');
+                  }}
                   style={{
                     backgroundColor: Colors.white,
                     borderRadius: 12,
@@ -746,10 +888,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: Colors.muted, fontWeight: '600' }}>
+                  <Text style={{ fontSize: 14, color: Colors.dark, fontWeight: '600' }}>
                     app settings
                   </Text>
-                  <Text style={{ fontSize: 13, color: Colors.muted }}>›</Text>
+                  <Text style={{ fontSize: 16, color: Colors.muted }}>›</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -920,7 +1062,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
                       {/* Skills gap */}
                       {score.skillsGap && score.skillsGap.length > 0 && (
-                        <View>
+                        <View style={{ marginBottom: 12 }}>
                           <Text style={{ fontSize: 11, fontWeight: '700', color: Colors.orange, marginBottom: 5 }}>
                             skills to develop
                           </Text>
@@ -936,40 +1078,62 @@ export const DashboardScreen = ({ navigation }: Props) => {
                           </View>
                         </View>
                       )}
+
+                      {/* Close the gap button */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          setMyPathVisible(false);
+                          navigation.navigate('WaysIn', { targetCareer: score.pathTitle });
+                        }}
+                        style={{
+                          backgroundColor: Colors.orange,
+                          borderRadius: 12,
+                          paddingVertical: 10,
+                          alignItems: 'center',
+                          marginTop: 4,
+                        }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: Colors.white }}>
+                          close the gap →
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   );
                 })
               )}
             </ScrollView>
 
-            {/* Floating re-plan button */}
+            {/* Floating Nova "explore more paths" FAB */}
             <View style={{
               position: 'absolute',
               bottom: insets.bottom + 20,
-              left: 20,
-              right: 20,
+              alignSelf: 'center',
+              alignItems: 'center',
             }}>
               <TouchableOpacity
                 onPress={() => {
                   setMyPathVisible(false);
-                  navigation.navigate('Upload');
+                  navigation.navigate('RePathChat');
                 }}
                 style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
                   backgroundColor: Colors.orange,
-                  borderRadius: 16,
-                  paddingVertical: 16,
                   alignItems: 'center',
+                  justifyContent: 'center',
                   shadowColor: Colors.orange,
                   shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.35,
+                  shadowOpacity: 0.4,
                   shadowRadius: 8,
                   elevation: 8,
                 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '800', color: Colors.white, letterSpacing: 0.3 }}>
-                  re-plan my path →
-                </Text>
+                <Text style={{ fontSize: 26 }}>✦</Text>
               </TouchableOpacity>
+              <Text style={{ fontSize: 11, color: Colors.muted, marginTop: 6, fontWeight: '500' }}>
+                explore more paths
+              </Text>
             </View>
           </View>
         </View>

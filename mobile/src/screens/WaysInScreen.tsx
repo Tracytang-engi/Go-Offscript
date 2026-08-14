@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Screen } from '../components/layout/Screen';
 import { NovaBubble } from '../components/nova/NovaBubble';
@@ -12,9 +12,7 @@ import { useOnboardingStore } from '../lib/store/onboarding.store';
 import { searchOpportunities, mentorApi } from '../lib/api/onboarding.api';
 import type { Opportunity, Mentor } from '../types';
 
-type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'WaysIn'>;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'WaysIn'>;
 
 type ContentType = 'all' | 'jobs' | 'projects' | 'events' | 'mentors';
 
@@ -34,7 +32,9 @@ const CONTENT_OPP_TYPES: Record<ContentType, string[]> = {
   mentors: [],
 };
 
-export const WaysInScreen = ({ navigation }: Props) => {
+export const WaysInScreen = ({ navigation, route }: Props) => {
+  const presetCareer = route.params?.targetCareer;
+
   const {
     likedPaths,
     setOpportunities,
@@ -45,7 +45,7 @@ export const WaysInScreen = ({ navigation }: Props) => {
     setOnboardingComplete,
   } = useOnboardingStore();
 
-  const [selectedCareer, setSelectedCareer] = useState<string>('all');
+  const [selectedCareer, setSelectedCareer] = useState<string>(presetCareer ?? 'all');
   const [contentType, setContentType] = useState<ContentType>('all');
 
   const [oppsByCareer, setOppsByCareer] = useState<Record<string, Opportunity[]>>({});

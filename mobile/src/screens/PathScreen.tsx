@@ -4,7 +4,7 @@ import {
   TouchableOpacity, Animated, PanResponder,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { NovaBubble } from '../components/nova/NovaBubble';
 import { SwipeCard } from '../components/ui/SwipeCard';
@@ -13,9 +13,7 @@ import { useOnboardingStore } from '../lib/store/onboarding.store';
 import { pathApi } from '../lib/api/onboarding.api';
 import type { CareerPath, PathScore } from '../types';
 
-type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Path'>;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'Path'>;
 
 const { height: WIN_H } = Dimensions.get('window');
 
@@ -23,10 +21,11 @@ const { height: WIN_H } = Dimensions.get('window');
 const PEEK_H = 150;
 const NOVA_H  = WIN_H - PEEK_H;
 
-export const PathScreen = ({ navigation }: Props) => {
+export const PathScreen = ({ navigation, route }: Props) => {
+  const fromRepath = route.params?.fromRepath ?? false;
   const insets = useSafeAreaInsets();
   const {
-    setCareerPath, setLikedPaths,
+    setCareerPath, setLikedPaths, addLikedPaths,
     selectedValues, skills, connectedPlatforms, chatSummary,
   } = useOnboardingStore();
 
@@ -114,8 +113,13 @@ export const PathScreen = ({ navigation }: Props) => {
     const likedTitles = cards
       .filter((_, i) => decisions[i] === 'like')
       .map((c) => c.pathTitle);
-    setLikedPaths(likedTitles);
-    navigation.navigate('WaysIn');
+    if (fromRepath) {
+      addLikedPaths(likedTitles);
+      navigation.navigate('Dashboard');
+    } else {
+      setLikedPaths(likedTitles);
+      navigation.navigate('WaysIn');
+    }
   };
 
   // Track current card from FlatList scroll

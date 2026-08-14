@@ -31,7 +31,7 @@ export const RegisterScreen = ({ navigation }: Props) => {
   const [loading, setLoading] = useState(false);
   const [slowNetwork, setSlowNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const { setAuth } = useAuthStore();
   const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (slowTimer.current) clearTimeout(slowTimer.current); }, []);
@@ -45,9 +45,10 @@ export const RegisterScreen = ({ navigation }: Props) => {
     setSlowNetwork(false);
     slowTimer.current = setTimeout(() => setSlowNetwork(true), 8000);
     try {
-      const result = await authApi.register({ name: name.trim(), email: email.trim().toLowerCase(), password });
-      await setAuth(result.user, result.token);
-      navigation.navigate('Upload');
+      const normalizedEmail = email.trim().toLowerCase();
+      await authApi.register({ name: name.trim(), email: normalizedEmail, password });
+      // Navigate to email verification — user is NOT logged in yet
+      navigation.navigate('VerifyEmail', { email: normalizedEmail });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('network')) {

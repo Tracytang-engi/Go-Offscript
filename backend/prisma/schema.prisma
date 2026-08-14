@@ -10,12 +10,15 @@ datasource db {
 // ─── Auth & Identity ──────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  emailVerified Boolean   @default(false)
+  emailOtp      String?
+  emailOtpExp   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   profile       UserProfile?
   cvUploads     CvUpload[]

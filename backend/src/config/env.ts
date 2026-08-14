@@ -13,4 +13,6 @@ export const env = {
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ?? '',
   PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY ?? '',
   PERPLEXITY_GROUP_ID: process.env.PERPLEXITY_GROUP_ID ?? '',
+  SMTP_USER: process.env.SMTP_USER ?? '',
+  SMTP_PASS: process.env.SMTP_PASS ?? '',
 } as const;

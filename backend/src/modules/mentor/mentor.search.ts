@@ -12,9 +12,13 @@ export interface FoundMentor {
   yearsExperience: number;
 }
 
-// LinkedIn people search: name only — fewer keywords = better match rate
+const stripAcademicTitle = (name: string): string =>
+  name.replace(/^(Dr\.?\s+|Prof\.?\s+|Professor\s+|Mr\.?\s+|Ms\.?\s+|Mrs\.?\s+)/i, '').trim();
+
+// LinkedIn people search: name only (stripped of academic titles) — fewer keywords = better match rate
 export const buildLinkedInSearchUrl = (name: string, _company: string): string => {
-  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(name)}`;
+  const cleanName = stripAcademicTitle(name);
+  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(cleanName)}`;
 };
 
 const SYSTEM_PROMPT = `You are a professional mentor researcher. Find REAL, specific professionals who work in a given field and would make great mentors for early-career people.

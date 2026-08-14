@@ -39,6 +39,7 @@ interface OnboardingState {
   appendChatSummary: (extra: string) => void;
   setCareerPath: (path: CareerPath) => void;
   setLikedPaths: (paths: string[]) => void;
+  addLikedPaths: (newPaths: string[]) => void;
   setOpportunities: (opps: Opportunity[]) => void;
   setOpportunityFilter: (filter: string) => void;
   setOnboardingComplete: () => Promise<void>;
@@ -104,6 +105,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   setCareerPath: (careerPath) => set({ careerPath }),
   setLikedPaths: (likedPaths) => set({ likedPaths }),
+  addLikedPaths: (newPaths) =>
+    set((state) => ({
+      likedPaths: Array.from(new Set([...state.likedPaths, ...newPaths])),
+    })),
   setOpportunities: (opportunities) => set({ opportunities }),
   setOpportunityFilter: (opportunityFilter) => set({ opportunityFilter }),
 
