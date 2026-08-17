@@ -25,7 +25,7 @@ export const PathScreen = ({ navigation, route }: Props) => {
   const fromRepath = route.params?.fromRepath ?? false;
   const insets = useSafeAreaInsets();
   const {
-    setCareerPath, setLikedPaths, addLikedPaths,
+    setCareerPath, mergeCareerPaths, setLikedPaths, addLikedPaths,
     selectedValues, skills, connectedPlatforms, chatSummary,
   } = useOnboardingStore();
 
@@ -65,7 +65,11 @@ export const PathScreen = ({ navigation, route }: Props) => {
       chatSummary: chatSummary || undefined,
     }).then((result) => {
       setPath(result.path);
-      setCareerPath(result.path);
+      if (fromRepath) {
+        mergeCareerPaths(result.path);
+      } else {
+        setCareerPath(result.path);
+      }
       if (!result.isReal && result.errorMessage) setErrorMsg(result.errorMessage);
       setLoading(false);
     });

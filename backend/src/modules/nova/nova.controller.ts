@@ -5,6 +5,7 @@ import { callNovaAgent } from './nova.agent';
 import {
   NOVA_PROFILE_SYSTEM_PROMPT,
   NOVA_CHAT_SYSTEM_PROMPT,
+  NOVA_REPATH_CHAT_SYSTEM_PROMPT,
   buildNovaProfilePrompt,
   buildNovaUserPrompt,
 } from './nova.prompt';
@@ -110,11 +111,15 @@ export const generateProfile = async (req: Request, res: Response, next: NextFun
 
 export const chat = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userMessage, history = [], profileContext = '' } = req.body as {
+    const { userMessage, history = [], profileContext = '', mode } = req.body as {
       userMessage: string;
       history: Array<{ role: 'user' | 'nova'; content: string }>;
       profileContext?: string;
+      mode?: 'repath';
     };
+
+    const isRepath = mode === 'repath';
+    const systemPrompt = isRepath ? NOVA_REPATH_CHAT_SYSTEM_PROMPT : NOVA_CHAT_SYSTEM_PROMPT;
 
     const conversationText = history
       .map((m) => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.content}`)
@@ -124,13 +129,22 @@ export const chat = async (req: Request, res: Response, next: NextFunction) => {
       profileContext ? `Profile context: ${profileContext}` : '',
       conversationText ? `Conversation so far:\n${conversationText}` : '',
       `User just said: "${userMessage}"`,
-      '\nRespond to what the user just shared.',
+      isRepath
+        ? `\nThis is turn ${Math.ceil(history.length / 2) + 1} of the repath conversation.`
+        : '\nRespond to what the user just shared.',
     ].filter(Boolean).join('\n\n');
 
-    const result = await callPerplexityJson<{ response: string }>(
-      NOVA_CHAT_SYSTEM_PROMPT,
+    const defaultRepath = {
+      response: "sounds interesting — are you drawn more towards creative work or something more analytical?",
+      type: 'question' as const,
+      options: ['A: creative / people-facing', 'B: analytical / technical'],
+    };
+    const defaultChat = { response: "that's really interesting — thanks for sharing that. it'll help me find the right paths for you." };
+
+    const result = await callPerplexityJson<{ response: string; type?: string; options?: string[] }>(
+      systemPrompt,
       userPrompt,
-      { response: "that's really interesting ? thanks for sharing that. it'll help me find the right paths for you." }
+      isRepath ? defaultRepath : defaultChat
     );
 
     sendSuccess(res, result, 'Chat response generated');

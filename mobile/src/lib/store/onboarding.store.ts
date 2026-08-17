@@ -38,6 +38,7 @@ interface OnboardingState {
   setChatSummary: (summary: string) => void;
   appendChatSummary: (extra: string) => void;
   setCareerPath: (path: CareerPath) => void;
+  mergeCareerPaths: (newPath: CareerPath) => void;
   setLikedPaths: (paths: string[]) => void;
   addLikedPaths: (newPaths: string[]) => void;
   setOpportunities: (opps: Opportunity[]) => void;
@@ -104,6 +105,22 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     })),
 
   setCareerPath: (careerPath) => set({ careerPath }),
+
+  mergeCareerPaths: (newPath) =>
+    set((state) => {
+      const existing = state.careerPath;
+      if (!existing) return { careerPath: newPath };
+      // Keep old pathScores; append new ones not already present by title
+      const existingTitles = new Set(existing.pathScores.map((p) => p.pathTitle));
+      const newScores = newPath.pathScores.filter((p) => !existingTitles.has(p.pathTitle));
+      return {
+        careerPath: {
+          ...newPath,
+          pathScores: [...existing.pathScores, ...newScores],
+        },
+      };
+    }),
+
   setLikedPaths: (likedPaths) => set({ likedPaths }),
   addLikedPaths: (newPaths) =>
     set((state) => ({

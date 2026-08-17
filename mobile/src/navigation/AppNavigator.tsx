@@ -17,21 +17,27 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAuthStore } from '../lib/store/auth.store';
-import { Colors } from '../constants/colors';
+import { useTheme } from '../lib/useTheme';
+import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator = () => {
   const { token, onboardingComplete } = useAuthStore();
   const isReturningUser = !!token && onboardingComplete;
+  const { colors, isDark } = useTheme();
+
+  const navTheme = isDark
+    ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.cream, card: colors.white } }
+    : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.cream, card: colors.white } };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         initialRouteName={isReturningUser ? 'Dashboard' : 'Welcome'}
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: Colors.cream },
+          contentStyle: { backgroundColor: colors.cream },
           animation: 'slide_from_right',
         }}
       >

@@ -105,15 +105,23 @@ export const novaApi = {
   chat: async (
     userMessage: string,
     history: ChatMessage[],
-    profileContext?: string
-  ): Promise<{ response: string }> => {
+    profileContext?: string,
+    mode?: 'repath'
+  ): Promise<{ response: string; type?: 'question' | 'statement'; options?: string[] }> => {
     try {
-      const r = await apiClient.post<ApiResponse<{ response: string }>>(
+      const r = await apiClient.post<ApiResponse<{ response: string; type?: 'question' | 'statement'; options?: string[] }>>(
         '/nova/chat',
-        { userMessage, history, profileContext }
+        { userMessage, history, profileContext, ...(mode ? { mode } : {}) }
       );
       return r.data.data;
     } catch {
+      if (mode === 'repath') {
+        return {
+          response: "sounds interesting — are you drawn more towards creative work or something more analytical?",
+          type: 'question',
+          options: ['A: creative / people-facing', 'B: analytical / technical'],
+        };
+      }
       return { response: "that's really helpful — thanks for sharing. i'll factor that in when finding your paths." };
     }
   },
