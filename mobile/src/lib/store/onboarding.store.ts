@@ -30,6 +30,9 @@ interface OnboardingState {
   profileAge: string;
   profileRegion: string;
   profileSchool: string;
+  // My Portrait — AI-generated career identity bullets, auto-updated with CV/profile
+  portraitBullets: string[];
+  portraitUpdating: boolean;
 
   setCv: (cvId: string, fileName: string, skills: string[]) => void;
   setSkills: (skills: string[]) => void;
@@ -50,6 +53,9 @@ interface OnboardingState {
   toggleSavedMentor: (mentor: Mentor) => void;
   toggleMentorContacted: (id: string) => void;
   setProfile: (fields: { name?: string; age?: string; region?: string; school?: string }) => void;
+  setPortraitBullets: (bullets: string[]) => void;
+  setPortraitUpdating: (val: boolean) => void;
+  setMentorMessage: (mentorId: string, message: string) => void;
   reset: () => void;
 }
 
@@ -73,6 +79,8 @@ const initialState = {
   profileAge: '',
   profileRegion: '',
   profileSchool: '',
+  portraitBullets: [],
+  portraitUpdating: false,
 };
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
@@ -181,6 +189,16 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       contactedMentorIds: state.contactedMentorIds.includes(id)
         ? state.contactedMentorIds.filter((c) => c !== id)
         : [...state.contactedMentorIds, id],
+    })),
+
+  setPortraitBullets: (bullets) => set({ portraitBullets: bullets }),
+  setPortraitUpdating: (val) => set({ portraitUpdating: val }),
+
+  setMentorMessage: (mentorId, message) =>
+    set((state) => ({
+      savedMentors: state.savedMentors.map((m) =>
+        m.id === mentorId ? { ...m, savedMessage: message } : m
+      ),
     })),
 
   reset: () => set(initialState),

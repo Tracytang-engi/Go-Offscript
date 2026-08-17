@@ -17,12 +17,14 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { ActivityIndicator } from 'react-native';
 import { useTheme } from '../lib/useTheme';
 import { useAuthStore } from '../lib/store/auth.store';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
 import type { Opportunity, Mentor } from '../types';
 import { MentorOutreachModal } from '../components/linkedin/MentorOutreachModal';
 import type { PathScore } from '../types';
+import { novaApi } from '../lib/api/onboarding.api';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -97,6 +99,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
     savedMentors,
     contactedMentorIds,
     toggleMentorContacted,
+    setMentorMessage,
     chatSummary,
     careerPath,
     likedPaths,
@@ -108,6 +111,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
     profileSchool,
     cvFileName,
     setProfile,
+    portraitBullets,
+    portraitUpdating,
+    setPortraitBullets,
+    setPortraitUpdating,
   } = useOnboardingStore();
 
   const { colors, fs } = useTheme();
@@ -129,6 +136,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
   const [skillsEditing, setSkillsEditing] = useState(false);
   const [draftSkillsText, setDraftSkillsText] = useState('');
 
+  // Portrait editing state
+  const [portraitEditing, setPortraitEditing] = useState(false);
+  const [draftPortraitText, setDraftPortraitText] = useState('');
+
   // My Path modal: which skipped path row is expanded
   const [expandedSkippedId, setExpandedSkippedId] = useState<string | null>(null);
 
@@ -140,8 +151,25 @@ export const DashboardScreen = ({ navigation }: Props) => {
       setDraftSchool(profileSchool);
       setSkillsEditing(false);
       setDraftSkillsText(skills.join(', '));
+      setPortraitEditing(false);
     }
   }, [profileVisible]);
+
+  // After returning from Upload (CV re-upload), refresh portrait in background
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (skills.length > 0 && !portraitUpdating) {
+        setPortraitUpdating(true);
+        novaApi.getProfile({ skills }).then((result) => {
+          if (result.portraitBullets && result.portraitBullets.length > 0) {
+            setPortraitBullets(result.portraitBullets);
+          }
+          setPortraitUpdating(false);
+        }).catch(() => setPortraitUpdating(false));
+      }
+    });
+    return unsubscribe;
+  }, [navigation, skills.length]);
 
   const toContactMentors = savedMentors.filter((m) => !contactedMentorIds.includes(m.id));
   const contactedMentors = savedMentors.filter((m) => contactedMentorIds.includes(m.id));
@@ -632,11 +660,13 @@ export const DashboardScreen = ({ navigation }: Props) => {
         visible={mentorModalVisible}
         mentor={selectedMentor}
         chatSummary={chatSummary}
+        portraitBullets={portraitBullets}
         isContacted={!!selectedMentor && contactedMentorIds.includes(selectedMentor.id)}
         onClose={() => {
           setMentorModalVisible(false);
           setSelectedMentor(null);
         }}
+        onSaveMessage={(mentorId, message) => setMentorMessage(mentorId, message)}
       />
 
       {/* ── Profile Modal ──────────────────────────────────────────────── */}
@@ -764,9 +794,12 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   <Text style={{ fontSize: 14, color: cvFileName ? colors.dark : colors.muted, fontWeight: '600', flex: 1 }} numberOfLines={1}>
                     {cvFileName ?? 'no CV uploaded'}
                   </Text>
-                  <Text style={{ fontSize: 13, color: colors.orange, fontWeight: '700', marginLeft: 8 }}>
-                    {cvFileName ? 're-upload →' : 'upload →'}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {portraitUpdating && <ActivityIndicator size="small" color={colors.muted} />}
+                    <Text style={{ fontSize: 13, color: portraitUpdating ? colors.muted : colors.orange, fontWeight: '700' }}>
+                      {portraitUpdating ? 'updating portrait...' : cvFileName ? 're-upload →' : 'upload →'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
 
@@ -868,6 +901,104 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   >
                     <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>update skills →</Text>
                   </TouchableOpacity>
+                )}
+              </View>
+
+              {/* ── My Portrait ─────────────────────────────────────────── */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  my portrait
+                </Text>
+
+                {portraitEditing ? (
+                  <View>
+                    <TextInput
+                      value={draftPortraitText}
+                      onChangeText={setDraftPortraitText}
+                      placeholder={'one bullet per line, e.g.\n- values people-facing, creative roles\n- background in finance + design'}
+                      placeholderTextColor={colors.border}
+                      multiline
+                      style={{
+                        backgroundColor: colors.white,
+                        borderRadius: 12,
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        fontSize: 14,
+                        color: colors.dark,
+                        borderWidth: 1,
+                        borderColor: colors.orange,
+                        marginBottom: 8,
+                        minHeight: 100,
+                        textAlignVertical: 'top',
+                        lineHeight: 22,
+                      }}
+                    />
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const updated = draftPortraitText
+                            .split('\n')
+                            .map((l) => l.replace(/^[-•]\s*/, '').trim())
+                            .filter(Boolean);
+                          setPortraitBullets(updated);
+                          setPortraitEditing(false);
+                        }}
+                        style={{ flex: 1, backgroundColor: colors.orange, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>save portrait</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setPortraitEditing(false)}
+                        style={{ paddingHorizontal: 16, borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.muted }}>cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    {portraitBullets.length > 0 ? (
+                      <View style={{
+                        backgroundColor: colors.white,
+                        borderRadius: 12,
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        marginBottom: 10,
+                      }}>
+                        {portraitBullets.map((b, i) => (
+                          <Text key={i} style={{ fontSize: 13, color: colors.dark, lineHeight: 22 }}>
+                            {`\u2022 ${b}`}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 10 }}>
+                        complete the onboarding chat to generate your portrait
+                      </Text>
+                    )}
+
+                    {/* Nova icon hint — tap to edit */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setDraftPortraitText(portraitBullets.map((b) => `- ${b}`).join('\n'));
+                        setPortraitEditing(true);
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                    >
+                      <View style={{
+                        width: 28, height: 28, borderRadius: 14,
+                        backgroundColor: colors.orangeLight,
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Text style={{ fontSize: 13 }}>{'\u2726'}</Text>
+                      </View>
+                      <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic' }}>
+                        edit my portrait
+                      </Text>
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
 

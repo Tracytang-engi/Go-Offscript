@@ -87,9 +87,10 @@ export const novaApi = {
   getProfile: async (clientData?: { skills?: string[]; values?: string[] }): Promise<{
     profileSummary: string;
     openingQuestion: string;
+    portraitBullets?: string[];
   }> => {
     try {
-      const r = await apiClient.post<ApiResponse<{ profileSummary: string; openingQuestion: string }>>(
+      const r = await apiClient.post<ApiResponse<{ profileSummary: string; openingQuestion: string; portraitBullets?: string[] }>>(
         '/nova/profile',
         clientData ?? {}
       );
@@ -98,6 +99,7 @@ export const novaApi = {
       return {
         profileSummary: "you've got a solid mix of skills and some clear values — let's dig a little deeper before i map out your path.",
         openingQuestion: "Is there anything you've always wanted to try that doesn't show up on your CV?",
+        portraitBullets: [],
       };
     }
   },
@@ -107,9 +109,9 @@ export const novaApi = {
     history: ChatMessage[],
     profileContext?: string,
     mode?: 'repath' | 'novachat'
-  ): Promise<{ response: string; type?: 'question' | 'statement'; options?: string[] }> => {
+  ): Promise<{ response: string; type?: 'question' | 'statement'; options?: string[]; portraitBullets?: string[] }> => {
     try {
-      const r = await apiClient.post<ApiResponse<{ response: string; type?: 'question' | 'statement'; options?: string[] }>>(
+      const r = await apiClient.post<ApiResponse<{ response: string; type?: 'question' | 'statement'; options?: string[]; portraitBullets?: string[] }>>(
         '/nova/chat',
         { userMessage, history, profileContext, ...(mode ? { mode } : {}) }
       );
@@ -139,6 +141,7 @@ export const novaApi = {
     mentorTitle: string;
     mentorBio: string;
     userProfileSummary: string;
+    portraitBullets?: string[];
     purpose: 'job' | 'chat' | 'other';
     purposeDetail?: string;
     followUpAnswer?: string;
@@ -158,6 +161,26 @@ export const novaApi = {
         message:
           `Hi ${body.mentorName.split(' ')[0]}, I'm exploring roles in your space and really admire the path you've built. I'd love a brief perspective if you ever have 10 minutes. Thank you for reading — I'd be grateful for any guidance.`,
       };
+    }
+  },
+
+  refineMessage: async (body: {
+    currentMessage: string;
+    userRequest: string;
+    mentorName: string;
+    mentorTitle: string;
+    mentorBio: string;
+    portraitBullets?: string[];
+  }): Promise<string> => {
+    try {
+      const r = await apiClient.post<ApiResponse<{ message: string }>>(
+        '/nova/refine-message',
+        body,
+        { timeout: 60000 }
+      );
+      return r.data.data.message ?? body.currentMessage;
+    } catch {
+      return body.currentMessage;
     }
   },
 };

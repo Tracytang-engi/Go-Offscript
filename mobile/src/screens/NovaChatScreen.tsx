@@ -24,12 +24,14 @@ type NovaReply = {
 };
 
 export const NovaChatScreen = ({ navigation }: Props) => {
-  const { skills, selectedValues, setChatSummary } = useOnboardingStore();
+  const { skills, selectedValues, setChatSummary, setPortraitBullets } = useOnboardingStore();
   const scrollRef = useRef<ScrollView>(null);
 
   const [profileSummary, setProfileSummary] = useState('');
   const [openingQuestion, setOpeningQuestion] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
+  // Accumulated portrait bullets — updated from getProfile initially, refined by final statement
+  const [pendingPortraitBullets, setPendingPortraitBullets] = useState<string[]>([]);
 
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -41,6 +43,9 @@ export const NovaChatScreen = ({ navigation }: Props) => {
     novaApi.getProfile({ skills, values: selectedValues }).then((result) => {
       setProfileSummary(result.profileSummary);
       setOpeningQuestion(result.openingQuestion);
+      if (result.portraitBullets && result.portraitBullets.length > 0) {
+        setPendingPortraitBullets(result.portraitBullets);
+      }
       setProfileLoading(false);
       // Opening question from getProfile is always a question — no confirm yet
       setLatestReply({ response: result.openingQuestion, type: 'question' });
@@ -69,6 +74,11 @@ export const NovaChatScreen = ({ navigation }: Props) => {
       options: result.options,
     };
 
+    // Capture refined portrait bullets when Nova delivers the final statement
+    if (reply.type === 'statement' && result.portraitBullets && result.portraitBullets.length > 0) {
+      setPendingPortraitBullets(result.portraitBullets);
+    }
+
     setLatestReply(reply);
     const updatedHistory: ChatMessage[] = [...newHistory, { role: 'nova', content: result.response }];
     setHistory(updatedHistory);
@@ -85,6 +95,9 @@ export const NovaChatScreen = ({ navigation }: Props) => {
       .map((m) => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.content}`)
       .join('\n');
     setChatSummary(summary);
+    if (pendingPortraitBullets.length > 0) {
+      setPortraitBullets(pendingPortraitBullets);
+    }
     navigation.navigate('Path');
   };
 

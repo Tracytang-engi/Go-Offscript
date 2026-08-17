@@ -9,5 +9,6 @@ router.post('/profile', novaController.generateProfile);
 router.post('/analyze', novaController.analyze);
 router.post('/chat', novaController.chat);
 router.post('/linkedin-outreach', novaController.linkedinOutreach);
+router.post('/refine-message', novaController.refineMessage);
 
 export default router;

@@ -10,7 +10,8 @@ Return ONLY valid JSON. No markdown, no preamble.
 Output format:
 {
   "profileSummary": "2-3 warm, specific sentences describing this person's professional identity based on their skills, values and interests. Write in second person ('you're someone who...'). Be specific — mention actual skills and values. Keep it conversational.",
-  "openingQuestion": "One open-ended follow-up question that invites them to share more. Should feel natural, not clinical. Examples: 'Is there a type of work environment you always imagined yourself in?', 'Is there anything you've always wanted to try that doesn't show up on your CV?'"
+  "openingQuestion": "One open-ended follow-up question that invites them to share more. Should feel natural, not clinical. Examples: 'Is there a type of work environment you always imagined yourself in?', 'Is there anything you've always wanted to try that doesn't show up on your CV?'",
+  "portraitBullets": ["3-5 concise bullet points capturing this person's career identity — skills, interests, values, working style. Each bullet is one short phrase or sentence. No emoji, no repetition. These will be used as context when writing professional outreach messages on the user's behalf."]
 }`;
 
 // ─── Chat Response Prompt ─────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ Conversation flow:
 - Turn 3+ or when you have a clear enough picture: Write a SHORT declarative statement (1-2 sentences, NO question) that reflects back what you now know about the user and signals you're ready to find their paths.
   Example: "You're someone who thrives in creative, people-facing roles — and you want work that feels meaningful, not just lucrative."
   Set "type": "statement". The user will then confirm and move on.
+  When type is "statement", also include "portraitBullets": an array of 3-5 concise bullet-point phrases capturing this person's career identity (skills, interests, values, working style). These will be used as context for professional outreach on the user's behalf.
 
 Rules:
 - Max 2 sentences per response.
@@ -50,14 +52,21 @@ Rules:
 
 Return ONLY valid JSON. No markdown, no preamble.
 
-Output format:
+Output format for questions:
 {
   "response": "...",
-  "type": "question" | "statement",
+  "type": "question",
   "options": ["A: ...", "B: ..."]
 }
 
-Note: "options" is ONLY included when type is "question" AND you are offering A/B choices. Omit it otherwise.`;
+Output format for the final statement:
+{
+  "response": "...",
+  "type": "statement",
+  "portraitBullets": ["bullet 1", "bullet 2", "bullet 3"]
+}
+
+Note: "options" is ONLY for type="question" with A/B choices. "portraitBullets" is ONLY for type="statement".`;
 
 // ─── Repath Chat Prompt ───────────────────────────────────────────────────────
 // Used by POST /nova/chat with mode:"repath" — guides user to new career direction
@@ -169,6 +178,17 @@ export const buildNovaUserPrompt = (input: {
 
   return parts.join('\n\n');
 };
+
+// ─── Refine Message Prompt ────────────────────────────────────────────────────
+// Used by POST /nova/refine-message — edits an existing draft based on user feedback
+
+export const NOVA_REFINE_MESSAGE_SYSTEM = `You refine LinkedIn cold messages for early-career users.
+Output ONLY valid JSON: {"message":"..."}
+Rules for "message":
+- English, 40-80 words (strict)
+- Warm, professional, specific to the mentor's background; no false claims
+- Apply the user's requested edit exactly — do not revert changes they already made to the draft
+- Keep what works; only change what the user asked to change`;
 
 export const buildNovaProfilePrompt = (input: {
   skills: string[];

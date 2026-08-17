@@ -97,6 +97,7 @@ export interface Mentor {
   expertise: string[];
   linkedinUrl?: string | null;
   avatarUrl?: string | null;
+  savedMessage?: string;   // user-edited cold message, persisted per mentor
 }
 
 export interface ApiResponse<T> {

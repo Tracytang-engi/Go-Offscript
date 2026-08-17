@@ -7,6 +7,7 @@ import {
   NOVA_CHAT_SYSTEM_PROMPT,
   NOVA_NOVACHAT_SYSTEM_PROMPT,
   NOVA_REPATH_CHAT_SYSTEM_PROMPT,
+  NOVA_REFINE_MESSAGE_SYSTEM,
   buildNovaProfilePrompt,
   buildNovaUserPrompt,
 } from './nova.prompt';
@@ -92,12 +93,13 @@ export const generateProfile = async (req: Request, res: Response, next: NextFun
       cvSummary: cvUpload?.parsedText ?? undefined,
     });
 
-    const result = await callPerplexityJson<{ profileSummary: string; openingQuestion: string }>(
+    const result = await callPerplexityJson<{ profileSummary: string; openingQuestion: string; portraitBullets?: string[] }>(
       NOVA_PROFILE_SYSTEM_PROMPT,
       userPrompt,
       {
-        profileSummary: `you're someone with a solid mix of skills ? ${skills.slice(0, 3).join(', ')} ? and values like ${values.slice(0, 2).join(' and ')}. you're clearly thinking carefully about your next move.`,
+        profileSummary: `you're someone with a solid mix of skills — ${skills.slice(0, 3).join(', ')} — and values like ${values.slice(0, 2).join(' and ')}. you're clearly thinking carefully about your next move.`,
         openingQuestion: "Is there anything you've always wanted to try that doesn't show up on your CV?",
+        portraitBullets: skills.slice(0, 3).map((s) => s),
       }
     );
 
@@ -155,7 +157,7 @@ export const chat = async (req: Request, res: Response, next: NextFunction) => {
 
     const fallback = isRepath ? defaultRepath : isNovachat ? defaultNovachat : defaultChat;
 
-    const result = await callPerplexityJson<{ response: string; type?: string; options?: string[] }>(
+    const result = await callPerplexityJson<{ response: string; type?: string; options?: string[]; portraitBullets?: string[] }>(
       systemPrompt,
       userPrompt,
       fallback
@@ -232,6 +234,7 @@ export const linkedinOutreach = async (req: Request, res: Response, next: NextFu
       mentorTitle: string;
       mentorBio: string;
       userProfileSummary: string;
+      portraitBullets?: string[];
       purpose: 'job' | 'chat' | 'other';
       purposeDetail?: string;
       followUpAnswer?: string;
@@ -244,11 +247,17 @@ export const linkedinOutreach = async (req: Request, res: Response, next: NextFu
           ? 'arrange a short chat / coffee chat'
           : `other: ${(body.purposeDetail ?? '').trim() || 'user-specified goal'}`;
 
+    const userPortrait = body.portraitBullets && body.portraitBullets.length > 0
+      ? `User portrait:\n${body.portraitBullets.map((b) => `- ${b}`).join('\n')}`
+      : body.userProfileSummary
+        ? `User profile: ${body.userProfileSummary}`
+        : 'User profile: not provided';
+
     if (body.phase === 'followup') {
       const userPrompt = [
         `Mentor: ${body.mentorName} — ${body.mentorTitle}`,
         `Public-style bio: ${body.mentorBio}`,
-        `User profile (summary): ${body.userProfileSummary || 'not provided'}`,
+        userPortrait,
         `Message goal: ${purposeLabel}`,
         'Ask ONE follow-up question so you can write the message next.',
       ].join('\n');
@@ -267,7 +276,7 @@ export const linkedinOutreach = async (req: Request, res: Response, next: NextFu
       const userPrompt = [
         `Mentor: ${body.mentorName} — ${body.mentorTitle}`,
         `Bio: ${body.mentorBio}`,
-        `User profile: ${body.userProfileSummary || 'not provided'}`,
+        userPortrait,
         `Goal: ${purposeLabel}`,
         `User answered your clarifying question with: "${answer}"`,
         'Write the LinkedIn message the user can send.',
@@ -286,6 +295,44 @@ export const linkedinOutreach = async (req: Request, res: Response, next: NextFu
     }
 
     return sendError(res, 'phase must be "followup" or "generate"', 400);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /nova/refine-message — refines an existing draft based on user's chat request
+
+export const refineMessage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { currentMessage, userRequest, mentorName, mentorTitle, mentorBio, portraitBullets } = req.body as {
+      currentMessage: string;
+      userRequest: string;
+      mentorName: string;
+      mentorTitle: string;
+      mentorBio: string;
+      portraitBullets?: string[];
+    };
+
+    const portrait = portraitBullets && portraitBullets.length > 0
+      ? `User portrait:\n${portraitBullets.map((b) => `- ${b}`).join('\n')}`
+      : '';
+
+    const userPrompt = [
+      `Mentor: ${mentorName} — ${mentorTitle}`,
+      mentorBio ? `Bio: ${mentorBio}` : '',
+      portrait,
+      `Current draft:\n"${currentMessage}"`,
+      `User's edit request: "${userRequest}"`,
+      'Produce a refined version that applies the request. Keep what works.',
+    ].filter(Boolean).join('\n\n');
+
+    const result = await callPerplexityJson<{ message: string }>(
+      NOVA_REFINE_MESSAGE_SYSTEM,
+      userPrompt,
+      { message: currentMessage }
+    );
+
+    sendSuccess(res, result, 'Message refined');
   } catch (err) {
     next(err);
   }
