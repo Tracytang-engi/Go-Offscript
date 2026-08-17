@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -33,21 +33,21 @@ type Props = {
 };
 
 const QUICK_BUTTONS = [
-  { label: 'Profile', emoji: '👤' },
-  { label: 'My Path', emoji: '🗺�? },
-  { label: 'LinkedIn\nOutreach', emoji: '🔗' },
+  { label: 'Profile', emoji: 'ðŸ‘¤' },
+  { label: 'My Path', emoji: 'ðŸ—ºï¸�' },
+  { label: 'LinkedIn\nOutreach', emoji: 'ðŸ”—' },
 ];
 
 const TYPE_EMOJI: Record<string, string> = {
-  INTERNSHIP: '💼',
-  FELLOWSHIP: '🌱',
-  SHORT_PROJECT: '🛠',
-  COACHING: '💬',
-  MEETUP: '📍',
+  INTERNSHIP: 'ðŸ’¼',
+  FELLOWSHIP: 'ðŸŒ±',
+  SHORT_PROJECT: 'ðŸ› ',
+  COACHING: 'ðŸ’¬',
+  MEETUP: 'ðŸ“�',
 };
 
-// ─── Swipeable row ────────────────────────────────────────────────────────────
-// Left-swipe reveals a yellow �?�?tapping it unsaves and closes the row.
+// â”€â”€â”€ Swipeable row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Left-swipe reveals a yellow â˜… â€” tapping it unsaves and closes the row.
 interface SwipeableRowProps {
   onUnsave: () => void;
   children: React.ReactNode;
@@ -71,7 +71,7 @@ const SwipeableRow = ({ onUnsave, children }: SwipeableRowProps) => {
         justifyContent: 'center',
       }}
     >
-      <Text style={{ fontSize: 22 }}>�?/Text>
+      <Text style={{ fontSize: 22 }}>â˜…</Text>
     </TouchableOpacity>
   );
 
@@ -82,7 +82,7 @@ const SwipeableRow = ({ onUnsave, children }: SwipeableRowProps) => {
   );
 };
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DashboardScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
@@ -119,7 +119,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
   const [myPathVisible, setMyPathVisible] = useState(false);
   const [profileVisible, setProfileVisible] = useState(false);
 
-  // Local draft for profile editing �?synced from store when modal opens
+  // Local draft for profile editing â€” synced from store when modal opens
   const [draftName, setDraftName] = useState('');
   const [draftAge, setDraftAge] = useState('');
   const [draftRegion, setDraftRegion] = useState('');
@@ -171,7 +171,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
   const handleUnsave = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    toggleSavedOpp(id);        // removes from savedOpportunityIds �?row disappears
+    toggleSavedOpp(id);        // removes from savedOpportunityIds â†’ row disappears
   };
 
   const handleApply = (url?: string | null) => {
@@ -182,7 +182,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
     }
   };
 
-  // ── Row component (shared by Pending and Completed) ──────────────────────
+  // â”€â”€ Row component (shared by Pending and Completed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const AppRow = ({ opp, isCompleted }: { opp: Opportunity; isCompleted: boolean }) => (
     <SwipeableRow onUnsave={() => handleUnsave(opp.id)}>
       <View
@@ -202,17 +202,17 @@ export const DashboardScreen = ({ navigation }: Props) => {
           elevation: 1,
         }}
       >
-        {/* Title + org (tappable �?detail modal) */}
+        {/* Title + org (tappable â†’ detail modal) */}
         <TouchableOpacity onPress={() => setSelectedOpp(opp)} style={{ flex: 1 }}>
           <Text style={{ fontSize: 14, fontWeight: '600', color: colors.dark }}>
-            {TYPE_EMOJI[opp.type] ?? '📋'} {opp.title}
+            {TYPE_EMOJI[opp.type] ?? 'ðŸ“‹'} {opp.title}
           </Text>
           <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
             {opp.organization}
           </Text>
         </TouchableOpacity>
 
-        {/* Checkbox �?toggles between pending and completed */}
+        {/* Checkbox â€” toggles between pending and completed */}
         <TouchableOpacity
           onPress={() => handleToggleComplete(opp.id, isCompleted)}
           style={{
@@ -228,7 +228,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
           }}
         >
           {isCompleted && (
-            <Text style={{ fontSize: 13, color: '#fff', fontWeight: '800' }}>�?/Text>
+            <Text style={{ fontSize: 13, color: '#fff', fontWeight: '800' }}>âœ“</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -244,7 +244,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
         {/* Header */}
         <View style={{ paddingTop: 16, marginBottom: 24 }}>
           <Text style={{ fontSize: 24, fontWeight: '800', color: colors.dark }}>
-            hey {user?.name?.split(' ')[0] ?? 'you'} �?          </Text>
+            hey {user?.name?.split(' ')[0] ?? 'you'} âœ¦
+          </Text>
           <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>
             here's your career dashboard
           </Text>
@@ -266,7 +267,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   } else if (idx === 1) {
                     setMyPathVisible(true);
                   } else {
-                    Alert.alert('Coming soon', "we're building this for you �?);
+                    Alert.alert('Coming soon', "we're building this for you âœ¨");
                   }
                 }}
                 style={{
@@ -296,11 +297,11 @@ export const DashboardScreen = ({ navigation }: Props) => {
           })}
         </View>
 
-        {/* LinkedIn Outreach �?saved mentors from Ways In */}
+        {/* LinkedIn Outreach â€” saved mentors from Ways In */}
         {linkedInOpen && (
           <View style={{ marginBottom: 28 }}>
             <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 14, lineHeight: 19 }}>
-              starred mentors from Ways In �?tap a card for details. gray box = to contact, green �?= contacted.
+              starred mentors from Ways In â€” tap a card for details. gray box = to contact, green âœ“ = contacted.
             </Text>
 
             <Text style={{ fontSize: 15, fontWeight: '800', color: colors.dark, marginBottom: 10 }}>
@@ -308,7 +309,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
             </Text>
             {toContactMentors.length === 0 ? (
               <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', marginBottom: 20 }}>
-                no mentors here yet �?save some from Ways In (Mentors tab) �?              </Text>
+                no mentors here yet â€” save some from Ways In (Mentors tab) â˜…
+              </Text>
             ) : (
               <ScrollView
                 horizontal
@@ -410,7 +412,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                           marginTop: 2,
                         }}
                       >
-                        <Text style={{ fontSize: 11, color: '#fff', fontWeight: '900' }}>�?/Text>
+                        <Text style={{ fontSize: 11, color: '#fff', fontWeight: '900' }}>âœ“</Text>
                       </TouchableOpacity>
                     </View>
                 ))}
@@ -449,7 +451,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   }}
                 >
                   <Text style={{ fontSize: 20, marginBottom: 6 }}>
-                    {TYPE_EMOJI[item.type] ?? '📋'}
+                    {TYPE_EMOJI[item.type] ?? 'ðŸ“‹'}
                   </Text>
                   <Text
                     numberOfLines={2}
@@ -462,7 +464,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   </Text>
                   {completedOpportunityIds.includes(item.id) && (
                     <Text style={{ fontSize: 12, color: '#22C55E', marginTop: 4, fontWeight: '700' }}>
-                      �?applied
+                      âœ“ applied
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -479,8 +481,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
           {pendingOpps.length === 0 ? (
             <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic' }}>
               {savedOpps.length === 0
-                ? 'save opportunities from Ways In to track them here �?
-                : 'all done �?everything moved to completed!'}
+                ? 'save opportunities from Ways In to track them here â˜…'
+                : 'all done â€” everything moved to completed!'}
             </Text>
           ) : (
             pendingOpps.map((opp) => (
@@ -529,7 +531,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
             elevation: 8,
           }}
         >
-          <Text style={{ fontSize: 22 }}>�?/Text>
+          <Text style={{ fontSize: 22 }}>âœ¦</Text>
         </View>
       </TouchableOpacity>
 
@@ -555,14 +557,14 @@ export const DashboardScreen = ({ navigation }: Props) => {
               onPress={() => setSelectedOpp(null)}
               style={{ position: 'absolute', top: 16, right: 20, zIndex: 10 }}
             >
-              <Text style={{ fontSize: 20, color: colors.muted }}>�?/Text>
+              <Text style={{ fontSize: 20, color: colors.muted }}>âœ•</Text>
             </TouchableOpacity>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {selectedOpp && (
                 <>
                   <Text style={{ fontSize: 22, marginBottom: 4 }}>
-                    {TYPE_EMOJI[selectedOpp.type] ?? '📋'}
+                    {TYPE_EMOJI[selectedOpp.type] ?? 'ðŸ“‹'}
                   </Text>
                   <Text style={{ fontSize: 20, fontWeight: '800', color: colors.dark, marginBottom: 4 }}>
                     {selectedOpp.title}
@@ -616,7 +618,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
                     }}
                   >
                     <Text style={{ fontSize: 16, fontWeight: '800', color: colors.white }}>
-                      apply �?                    </Text>
+                      apply â†’
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -636,7 +639,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
         }}
       />
 
-      {/* ── Profile Modal ──────────────────────────────────────────────── */}
+      {/* â”€â”€ Profile Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <Modal
         visible={profileVisible}
         animationType="slide"
@@ -661,10 +664,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
               alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12,
             }}>
               <Text style={{ fontSize: 20, fontWeight: '800', color: colors.dark }}>
-                your profile 👤
+                your profile ðŸ‘¤
               </Text>
               <TouchableOpacity onPress={() => setProfileVisible(false)} hitSlop={12}>
-                <Text style={{ fontSize: 22, color: colors.muted }}>�?/Text>
+                <Text style={{ fontSize: 22, color: colors.muted }}>âœ•</Text>
               </TouchableOpacity>
             </View>
 
@@ -673,7 +676,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
               contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
               keyboardShouldPersistTaps="handled"
             >
-              {/* ── Token / Payment row ──────────────────────────────────── */}
+              {/* â”€â”€ Token / Payment row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -699,11 +702,11 @@ export const DashboardScreen = ({ navigation }: Props) => {
                     paddingVertical: 10,
                   }}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>top up �?/Text>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>top up â†’</Text>
                 </TouchableOpacity>
               </View>
 
-              {/* ── Editable fields ─────────────────────────────────────── */}
+              {/* â”€â”€ Editable fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               {([
                 { label: 'name', value: draftName, onChange: setDraftName, placeholder: 'your name', keyboardType: 'default' },
                 { label: 'age', value: draftAge, onChange: setDraftAge, placeholder: 'e.g. 22', keyboardType: 'numeric' },
@@ -735,7 +738,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                 </View>
               ))}
 
-              {/* ── CV row ──────────────────────────────────────────────── */}
+              {/* â”€â”€ CV row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   cv
@@ -762,12 +765,12 @@ export const DashboardScreen = ({ navigation }: Props) => {
                     {cvFileName ?? 'no CV uploaded'}
                   </Text>
                   <Text style={{ fontSize: 13, color: colors.orange, fontWeight: '700', marginLeft: 8 }}>
-                    {cvFileName ? 're-upload �? : 'upload �?}
+                    {cvFileName ? 're-upload â†’' : 'upload â†’'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* ── Skills tags ─────────────────────────────────────────── */}
+              {/* â”€â”€ Skills tags â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               <View style={{ marginBottom: 20 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   extracted skills
@@ -787,7 +790,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   </View>
                 ) : (
                   <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 10 }}>
-                    no skills extracted yet �?upload a CV first
+                    no skills extracted yet â€” upload a CV first
                   </Text>
                 )}
 
@@ -863,12 +866,12 @@ export const DashboardScreen = ({ navigation }: Props) => {
                       paddingHorizontal: 16,
                     }}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>update skills �?/Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>update skills â†’</Text>
                   </TouchableOpacity>
                 )}
               </View>
 
-              {/* ── Settings row ────────────────────────────────────────── */}
+              {/* â”€â”€ Settings row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   settings
@@ -893,7 +896,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   <Text style={{ fontSize: 14, color: colors.dark, fontWeight: '600' }}>
                     app settings
                   </Text>
-                  <Text style={{ fontSize: 16, color: colors.muted }}>�?/Text>
+                  <Text style={{ fontSize: 16, color: colors.muted }}>â€º</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -923,14 +926,15 @@ export const DashboardScreen = ({ navigation }: Props) => {
                 }}
               >
                 <Text style={{ fontSize: 15, fontWeight: '800', color: colors.white }}>
-                  save �?                </Text>
+                  save â†’
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* ── My Path Modal ───────────────────────────────────────────────── */}
+      {/* â”€â”€ My Path Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <Modal
         visible={myPathVisible}
         animationType="slide"
@@ -957,9 +961,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
               alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12,
             }}>
               <Text style={{ fontSize: 20, fontWeight: '800', color: colors.dark }}>
-                your paths �?              </Text>
+                your paths âœ¦
+              </Text>
               <TouchableOpacity onPress={() => setMyPathVisible(false)} hitSlop={12}>
-                <Text style={{ fontSize: 22, color: colors.muted }}>�?/Text>
+                <Text style={{ fontSize: 22, color: colors.muted }}>âœ•</Text>
               </TouchableOpacity>
             </View>
 
@@ -969,9 +974,9 @@ export const DashboardScreen = ({ navigation }: Props) => {
             >
               {!careerPath ? (
                 <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                  <Text style={{ fontSize: 32, marginBottom: 12 }}>🗺�?/Text>
+                  <Text style={{ fontSize: 32, marginBottom: 12 }}>ðŸ—ºï¸�</Text>
                   <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center' }}>
-                    no paths yet �?complete the onboarding flow first
+                    no paths yet â€” complete the onboarding flow first
                   </Text>
                 </View>
               ) : (() => {
@@ -983,6 +988,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                     score.matchScore >= 80 ? '#22C55E'
                     : score.matchScore >= 60 ? colors.orange
                     : colors.muted;
+
                   return (
                     <View
                       key={score.id}
@@ -1000,37 +1006,36 @@ export const DashboardScreen = ({ navigation }: Props) => {
                         elevation: 3,
                       }}
                     >
-                      {/* Title row */}
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                         <Text style={{ fontSize: 16, fontWeight: '800', color: colors.dark, flex: 1, marginRight: 8 }}>
                           {score.pathTitle}
                         </Text>
-                        <View style={{
-                          backgroundColor: matchColor + '20',
-                          borderRadius: 999,
-                          paddingHorizontal: 10,
-                          paddingVertical: 4,
-                        }}>
+                        <View style={{ backgroundColor: matchColor + '20', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                           <Text style={{ fontSize: 12, fontWeight: '800', color: matchColor }}>
                             {score.matchScore}% match
                           </Text>
                         </View>
                       </View>
 
+                      {/* Description */}
                       {score.description ? (
                         <Text style={{ fontSize: 13, color: colors.dark, lineHeight: 20, marginBottom: 12 }}>
                           {score.description}
                         </Text>
                       ) : null}
 
+                      {/* Skills already have */}
                       {score.skillsAlreadyHave && score.skillsAlreadyHave.length > 0 && (
                         <View style={{ marginBottom: 10 }}>
                           <Text style={{ fontSize: 11, fontWeight: '700', color: '#22C55E', marginBottom: 5 }}>
                             skills you already have
                           </Text>
                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                            {score.skillsAlreadyHave.map((s: string) => (
-                              <View key={s} style={{ backgroundColor: '#D1FAE5', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
+                            {score.skillsAlreadyHave.map((s) => (
+                              <View key={s} style={{
+                                backgroundColor: '#D1FAE5', borderRadius: 999,
+                                paddingHorizontal: 10, paddingVertical: 3,
+                              }}>
                                 <Text style={{ fontSize: 11, color: '#065F46', fontWeight: '600' }}>{s}</Text>
                               </View>
                             ))}
@@ -1038,14 +1043,18 @@ export const DashboardScreen = ({ navigation }: Props) => {
                         </View>
                       )}
 
+                      {/* Skills gap */}
                       {score.skillsGap && score.skillsGap.length > 0 && (
                         <View style={{ marginBottom: 12 }}>
                           <Text style={{ fontSize: 11, fontWeight: '700', color: colors.orange, marginBottom: 5 }}>
                             skills to develop
                           </Text>
                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                            {score.skillsGap.map((s: string) => (
-                              <View key={s} style={{ backgroundColor: colors.orangeLight, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
+                            {score.skillsGap.map((s) => (
+                              <View key={s} style={{
+                                backgroundColor: colors.orangeLight, borderRadius: 999,
+                                paddingHorizontal: 10, paddingVertical: 3,
+                              }}>
                                 <Text style={{ fontSize: 11, color: colors.orange, fontWeight: '600' }}>{s}</Text>
                               </View>
                             ))}
@@ -1068,7 +1077,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
                         }}
                       >
                         <Text style={{ fontSize: 13, fontWeight: '800', color: colors.white }}>
-                          close the gap �?                        </Text>
+                          close the gap â†’
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -1076,28 +1086,22 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
                 return (
                   <>
-                    {/* ── Liked paths ── */}
                     {likedScores.length > 0
                       ? likedScores.map(renderPathCard)
                       : (
                         <View style={{ alignItems: 'center', paddingVertical: 24 }}>
                           <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
-                            you haven't liked any paths yet �?swipe right on a path card to add it here
+                            you haven't liked any paths yet
                           </Text>
                         </View>
                       )
                     }
 
-                    {/* ── Skipped paths (collapsible) ── */}
                     {skippedScores.length > 0 && (
                       <>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 10 }}>
                           <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                          <Text style={{
-                            fontSize: 10, fontWeight: '700', color: colors.muted,
-                            textTransform: 'uppercase', letterSpacing: 0.9,
-                            marginHorizontal: 12,
-                          }}>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.9, marginHorizontal: 12 }}>
                             skipped paths
                           </Text>
                           <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
@@ -1109,23 +1113,15 @@ export const DashboardScreen = ({ navigation }: Props) => {
                             score.matchScore >= 80 ? '#22C55E'
                             : score.matchScore >= 60 ? colors.orange
                             : colors.muted;
-
                           return (
                             <View key={score.id} style={{ marginBottom: 10 }}>
-                              {/* Collapsed header row �?always visible */}
                               <TouchableOpacity
                                 onPress={() => setExpandedSkippedId(isExpanded ? null : score.id)}
                                 style={{
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  backgroundColor: colors.white,
-                                  borderRadius: 12,
-                                  paddingHorizontal: 14,
-                                  paddingVertical: 12,
-                                  borderWidth: 1,
-                                  borderColor: colors.border,
-                                  opacity: 0.65,
+                                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                  backgroundColor: colors.white, borderRadius: 12,
+                                  paddingHorizontal: 14, paddingVertical: 12,
+                                  borderWidth: 1, borderColor: colors.border, opacity: 0.65,
                                 }}
                               >
                                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.dark, flex: 1, marginRight: 8 }} numberOfLines={1}>
@@ -1135,28 +1131,19 @@ export const DashboardScreen = ({ navigation }: Props) => {
                                   <View style={{ backgroundColor: matchColor + '20', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
                                     <Text style={{ fontSize: 11, fontWeight: '800', color: matchColor }}>{score.matchScore}%</Text>
                                   </View>
-                                  <Text style={{ fontSize: 14, color: colors.muted }}>{isExpanded ? '�? : '�?}</Text>
+                                  <Text style={{ fontSize: 14, color: colors.muted }}>{isExpanded ? '▲' : '▼'}</Text>
                                 </View>
                               </TouchableOpacity>
 
-                              {/* Expanded detail */}
                               {isExpanded && (
                                 <View style={{
-                                  backgroundColor: colors.white,
-                                  borderRadius: 12,
-                                  padding: 14,
-                                  borderWidth: 1,
-                                  borderColor: colors.border,
-                                  borderTopWidth: 0,
-                                  borderTopLeftRadius: 0,
-                                  borderTopRightRadius: 0,
-                                  marginTop: -4,
-                                  opacity: 0.8,
+                                  backgroundColor: colors.white, borderRadius: 12,
+                                  padding: 14, borderWidth: 1, borderColor: colors.border,
+                                  borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0,
+                                  marginTop: -4, opacity: 0.8,
                                 }}>
                                   {score.description ? (
-                                    <Text style={{ fontSize: 13, color: colors.dark, lineHeight: 19, marginBottom: 10 }}>
-                                      {score.description}
-                                    </Text>
+                                    <Text style={{ fontSize: 13, color: colors.dark, lineHeight: 19, marginBottom: 10 }}>{score.description}</Text>
                                   ) : null}
                                   {score.skillsAlreadyHave && score.skillsAlreadyHave.length > 0 && (
                                     <View style={{ marginBottom: 8 }}>
@@ -1186,7 +1173,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                                     onPress={() => { setMyPathVisible(false); navigation.navigate('WaysIn', { targetCareer: score.pathTitle }); }}
                                     style={{ backgroundColor: colors.border, borderRadius: 10, paddingVertical: 8, alignItems: 'center' }}
                                   >
-                                    <Text style={{ fontSize: 12, fontWeight: '800', color: colors.muted }}>close the gap �?/Text>
+                                    <Text style={{ fontSize: 12, fontWeight: '800', color: colors.muted }}>close the gap</Text>
                                   </TouchableOpacity>
                                 </View>
                               )}
@@ -1226,7 +1213,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   elevation: 8,
                 }}
               >
-                <Text style={{ fontSize: 26 }}>�?/Text>
+                <Text style={{ fontSize: 26 }}>âœ¦</Text>
               </TouchableOpacity>
               <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, fontWeight: '500' }}>
                 explore more paths
