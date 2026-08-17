@@ -37,9 +37,9 @@ export const MOCK_PATH: CareerPath = {
     'Connect with people doing finance + brand work',
   ],
   pathScores: [
-    { id: '1', pathTitle: 'Finance + Creative Direction', matchScore: 91, label: 'your sweet spot', rank: 1 },
-    { id: '2', pathTitle: 'Creative Industries — Commercial', matchScore: 76, label: 'strong match', rank: 2 },
-    { id: '3', pathTitle: 'Architecture & Built Environment', matchScore: 62, label: 'passion signal 🔥', rank: 3 },
+    { id: 'mock-path-1', pathTitle: 'Finance + Creative Direction', matchScore: 91, label: 'your sweet spot', rank: 1 },
+    { id: 'mock-path-2', pathTitle: 'Creative Industries — Commercial', matchScore: 76, label: 'strong match', rank: 2 },
+    { id: 'mock-path-3', pathTitle: 'Architecture & Built Environment', matchScore: 62, label: 'passion signal', rank: 3 },
   ],
 };
 

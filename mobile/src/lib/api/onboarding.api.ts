@@ -196,21 +196,21 @@ export const pathApi = {
         nextActions: d.nextActions,
         pathScores: [
           {
-            id: '1', pathTitle: d.primaryPath.title, matchScore: d.primaryPath.matchScore,
+            id: `path-${Date.now()}-1`, pathTitle: d.primaryPath.title, matchScore: d.primaryPath.matchScore,
             label: 'your sweet spot', rank: 1,
             description: d.primaryPath.description,
             skillsAlreadyHave: (d.primaryPath as any).skillsAlreadyHave ?? [],
             skillsGap: (d.primaryPath as any).skillsGap ?? [],
           },
           ...(d.secondaryPath ? [{
-            id: '2', pathTitle: d.secondaryPath.title, matchScore: d.secondaryPath.matchScore,
+            id: `path-${Date.now()}-2`, pathTitle: d.secondaryPath.title, matchScore: d.secondaryPath.matchScore,
             label: 'strong match', rank: 2,
             description: d.secondaryPath.description,
             skillsAlreadyHave: (d.secondaryPath as any).skillsAlreadyHave ?? [],
             skillsGap: (d.secondaryPath as any).skillsGap ?? [],
           }] : []),
           ...(d.tertiaryPath ? [{
-            id: '3', pathTitle: d.tertiaryPath.title, matchScore: d.tertiaryPath.matchScore,
+            id: `path-${Date.now()}-3`, pathTitle: d.tertiaryPath.title, matchScore: d.tertiaryPath.matchScore,
             label: 'passion signal', rank: 3,
             description: d.tertiaryPath.description,
             skillsAlreadyHave: (d.tertiaryPath as any).skillsAlreadyHave ?? [],
