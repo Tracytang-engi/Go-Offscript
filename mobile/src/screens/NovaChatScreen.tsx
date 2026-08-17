@@ -17,58 +17,70 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'NovaChat'>;
 };
 
+type NovaReply = {
+  response: string;
+  type: 'question' | 'statement';
+  options?: string[];
+};
+
 export const NovaChatScreen = ({ navigation }: Props) => {
   const { skills, selectedValues, setChatSummary } = useOnboardingStore();
   const scrollRef = useRef<ScrollView>(null);
 
-  // Profile init
   const [profileSummary, setProfileSummary] = useState('');
   const [openingQuestion, setOpeningQuestion] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
 
-  // Chat state
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  // Latest structured reply from Nova
+  const [latestReply, setLatestReply] = useState<NovaReply | null>(null);
 
-  // Load profile on mount
   useEffect(() => {
     novaApi.getProfile({ skills, values: selectedValues }).then((result) => {
       setProfileSummary(result.profileSummary);
       setOpeningQuestion(result.openingQuestion);
       setProfileLoading(false);
-      setShowConfirm(true);
+      // Opening question from getProfile is always a question — no confirm yet
+      setLatestReply({ response: result.openingQuestion, type: 'question' });
     });
   }, []);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-  };
 
-  const handleSend = async () => {
-    if (!input.trim() || sending) return;
-    const userMessage = input.trim();
+  const sendMessage = async (message: string) => {
+    if (!message.trim() || sending) return;
+    const userMessage = message.trim();
     setInput('');
-    setShowConfirm(false);
+    setLatestReply(null);
     setSending(true);
 
     const newHistory: ChatMessage[] = [...history, { role: 'user', content: userMessage }];
     setHistory(newHistory);
     scrollToBottom();
 
-    const profileContext = profileSummary;
-    const result = await novaApi.chat(userMessage, newHistory, profileContext);
+    const result = await novaApi.chat(userMessage, newHistory, profileSummary, 'novachat');
 
+    const reply: NovaReply = {
+      response: result.response,
+      type: (result.type as 'question' | 'statement') ?? 'question',
+      options: result.options,
+    };
+
+    setLatestReply(reply);
     const updatedHistory: ChatMessage[] = [...newHistory, { role: 'nova', content: result.response }];
     setHistory(updatedHistory);
     setSending(false);
-    setShowConfirm(true);
     scrollToBottom();
   };
 
+  const handleSend = () => sendMessage(input);
+
+  const handleOptionTap = (option: string) => sendMessage(option);
+
   const handleConfirm = () => {
-    // Build a chat summary from the conversation to pass to path analysis
     const summary = history
       .map((m) => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.content}`)
       .join('\n');
@@ -76,11 +88,14 @@ export const NovaChatScreen = ({ navigation }: Props) => {
     navigation.navigate('Path');
   };
 
+  const showConfirm = latestReply?.type === 'statement' && !sending;
+  const showOptions = latestReply?.type === 'question' && latestReply.options && latestReply.options.length > 0 && !sending;
+  const showInput = !showConfirm;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: Colors.cream }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <Screen scrollable={false}>
         <ScrollView
@@ -89,7 +104,6 @@ export const NovaChatScreen = ({ navigation }: Props) => {
           contentContainerStyle={{ paddingBottom: 16 }}
           style={{ flex: 1 }}
         >
-          {/* Profile loading */}
           {profileLoading ? (
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <ActivityIndicator color={Colors.orange} size="large" />
@@ -101,7 +115,7 @@ export const NovaChatScreen = ({ navigation }: Props) => {
             <>
               {/* Initial Nova profile bubble */}
               <NovaBubble
-                message={`${profileSummary}\n\n${openingQuestion}`}
+                message={profileSummary}
                 subtitle="online"
               />
 
@@ -109,7 +123,6 @@ export const NovaChatScreen = ({ navigation }: Props) => {
               {history.map((msg, i) => (
                 <View key={i} style={{ marginBottom: 12 }}>
                   {msg.role === 'user' ? (
-                    // User message — right-aligned bubble
                     <View style={{ alignItems: 'flex-end' }}>
                       <View style={{
                         backgroundColor: Colors.orange,
@@ -125,7 +138,6 @@ export const NovaChatScreen = ({ navigation }: Props) => {
                       </View>
                     </View>
                   ) : (
-                    // Nova response — left-aligned bubble
                     <NovaBubble message={msg.content} subtitle="online" />
                   )}
                 </View>
@@ -139,7 +151,7 @@ export const NovaChatScreen = ({ navigation }: Props) => {
                     backgroundColor: Colors.orangeLight,
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Text style={{ fontSize: 14 }}>✦</Text>
+                    <Text style={{ fontSize: 14 }}>{'✦'}</Text>
                   </View>
                   <View style={{
                     backgroundColor: Colors.white, borderRadius: 16,
@@ -149,15 +161,38 @@ export const NovaChatScreen = ({ navigation }: Props) => {
                   </View>
                 </View>
               )}
+
+              {/* A/B option chips (when Nova asks a question with options) */}
+              {showOptions && (
+                <View style={{ gap: 8, marginTop: 4, marginBottom: 8 }}>
+                  {latestReply!.options!.map((opt) => (
+                    <TouchableOpacity
+                      key={opt}
+                      onPress={() => handleOptionTap(opt)}
+                      style={{
+                        backgroundColor: Colors.white,
+                        borderRadius: 12,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        borderWidth: 1.5,
+                        borderColor: Colors.orange,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.orange }}>{opt}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </>
           )}
         </ScrollView>
 
-        {/* Bottom input area */}
+        {/* Bottom area */}
         {!profileLoading && (
           <View style={{ paddingBottom: Platform.OS === 'ios' ? 8 : 16 }}>
-            {/* Confirm button — appears after Nova responds */}
-            {showConfirm && !sending && (
+            {/* Confirm button — ONLY when Nova made a statement */}
+            {showConfirm && (
               <TouchableOpacity
                 onPress={handleConfirm}
                 style={{
@@ -174,42 +209,44 @@ export const NovaChatScreen = ({ navigation }: Props) => {
               </TouchableOpacity>
             )}
 
-            {/* Text input row */}
-            <View style={{
-              flexDirection: 'row', alignItems: 'flex-end', gap: 10,
-              backgroundColor: Colors.white,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: Colors.border,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-            }}>
-              <TextInput
-                value={input}
-                onChangeText={setInput}
-                placeholder="Chat with Nova a little bit more about yourself e.g. hobbies, future plans..."
-                placeholderTextColor={Colors.muted}
-                multiline
-                style={{
-                  flex: 1,
-                  fontSize: 14,
-                  color: Colors.dark,
-                  maxHeight: 100,
-                  lineHeight: 20,
-                }}
-              />
-              <TouchableOpacity
-                onPress={handleSend}
-                disabled={!input.trim() || sending}
-                style={{
-                  width: 36, height: 36, borderRadius: 18,
-                  backgroundColor: input.trim() && !sending ? Colors.orange : Colors.orangeLight,
-                  alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 16, color: Colors.white }}>→</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Text input — hidden when confirm is showing */}
+            {showInput && (
+              <View style={{
+                flexDirection: 'row', alignItems: 'flex-end', gap: 10,
+                backgroundColor: Colors.white,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: Colors.border,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+              }}>
+                <TextInput
+                  value={input}
+                  onChangeText={setInput}
+                  placeholder="Chat with Nova a little bit more about yourself..."
+                  placeholderTextColor={Colors.muted}
+                  multiline
+                  style={{
+                    flex: 1,
+                    fontSize: 14,
+                    color: Colors.dark,
+                    maxHeight: 100,
+                    lineHeight: 20,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={handleSend}
+                  disabled={!input.trim() || sending}
+                  style={{
+                    width: 36, height: 36, borderRadius: 18,
+                    backgroundColor: input.trim() && !sending ? Colors.orange : Colors.orangeLight,
+                    alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ fontSize: 16, color: Colors.white }}>{'→'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
 

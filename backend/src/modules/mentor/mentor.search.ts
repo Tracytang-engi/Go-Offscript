@@ -24,6 +24,7 @@ export const buildLinkedInSearchUrl = (name: string, _company: string): string =
 const SYSTEM_PROMPT = `You are a professional mentor researcher. Find REAL, specific professionals who work in a given field and would make great mentors for early-career people.
 
 Key requirements:
+- "name" MUST be a real person's full name in "First Last" format (e.g. "Sarah Chen", "James Okafor"). NEVER put a job title or role description in the name field.
 - Identify professionals by NAME, JOB TITLE, and COMPANY — real people you can actually verify
 - 3-8 years of experience (not entry level, not C-suite / famous — we want people who reply to messages)
 - Must be genuinely active in the field, not just adjacent
@@ -35,7 +36,7 @@ Return ONLY valid JSON array, no markdown, no preamble.
 Output format:
 [
   {
-    "name": "Full Name",
+    "name": "First Last",
     "title": "Exact Job Title",
     "company": "Company or Organization Name",
     "bio": "2-3 sentences about their professional background, what they've worked on, and why they're a good mentor for someone entering this field",
@@ -108,8 +109,18 @@ For each mentor:
 
     const parsed = JSON.parse(cleaned) as FoundMentor[];
 
+    const looksLikePersonName = (name: string) => {
+      const lower = name.toLowerCase();
+      // Reject if it contains role-like keywords
+      const roleKeywords = [' at ', ' in ', ' for ', 'engineer', 'manager', 'director', 'analyst', 'designer', 'developer', 'lead', 'head of', 'senior', 'junior'];
+      if (roleKeywords.some((kw) => lower.includes(kw))) return false;
+      // Must have at least 2 words (First Last)
+      if (name.trim().split(/\s+/).length < 2) return false;
+      return true;
+    };
+
     return parsed
-      .filter((m) => m.name && m.title && m.company)
+      .filter((m) => m.name && m.title && m.company && looksLikePersonName(m.name))
       .map((m) => ({
         name: m.name,
         title: m.title,

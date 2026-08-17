@@ -17,10 +17,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Path'>;
 
 const { height: WIN_H } = Dimensions.get('window');
 
-// Nova covers most of the screen; cards peek from bottom
-const PEEK_H = 150;
-const NOVA_H  = WIN_H - PEEK_H;
-
 export const PathScreen = ({ navigation, route }: Props) => {
   const fromRepath = route.params?.fromRepath ?? false;
   const insets = useSafeAreaInsets();
@@ -112,6 +108,8 @@ export const PathScreen = ({ navigation, route }: Props) => {
   };
 
   const anyLiked = Object.values(decisions).includes('like');
+  // All cards must have a decision before the button activates
+  const allDecided = cards.length > 0 && Object.keys(decisions).length === cards.length;
 
   const handleConfirm = () => {
     const likedTitles = cards
@@ -209,14 +207,13 @@ export const PathScreen = ({ navigation, route }: Props) => {
         )}
       />
 
-      {/* ── Nova overlay — slides off upward when dismissed ── */}
+      {/* ── Nova overlay — full-screen, slides off upward when dismissed ── */}
       {novaVisible && (
         <Animated.View
           {...novaPan.panHandlers}
           style={{
             position: 'absolute',
-            top: 0, left: 0, right: 0,
-            height: NOVA_H,
+            top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: Colors.cream,
             transform: [{ translateY: novaY }],
             zIndex: 20,
@@ -225,21 +222,38 @@ export const PathScreen = ({ navigation, route }: Props) => {
             justifyContent: 'center',
           }}
         >
+          {/* Nova summary */}
           <NovaBubble
             message={
               path.explanation ||
-              "here are some possible paths i found for you, based on your skills, values and everything you shared 🎯"
+              "here are some possible paths i found for you, based on your skills, values and everything you shared"
             }
             subtitle="online"
           />
-          <TouchableOpacity
-            onPress={dismissNova}
-            style={{ marginTop: 24, alignItems: 'center' }}
-          >
-            <Text style={{ color: Colors.muted, fontSize: 13, letterSpacing: 0.3 }}>
-              ↑ swipe up to see your paths
-            </Text>
-          </TouchableOpacity>
+
+          {/* Bottom swipe indicator — grey line + arrow */}
+          <View style={{
+            position: 'absolute',
+            bottom: insets.bottom + 24,
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+          }}>
+            <TouchableOpacity onPress={dismissNova} style={{ alignItems: 'center', gap: 8 }}>
+              <Text style={{ color: Colors.muted, fontSize: 13, letterSpacing: 0.3 }}>
+                swipe up to see your paths
+              </Text>
+              <Text style={{ color: Colors.muted, fontSize: 22, lineHeight: 24 }}>
+                {'↑'}
+              </Text>
+              <View style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: Colors.border,
+              }} />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       )}
 
@@ -278,7 +292,7 @@ export const PathScreen = ({ navigation, route }: Props) => {
         </View>
 
         {/* "Close the gap" button OR hint text */}
-        {anyLiked ? (
+        {allDecided && anyLiked ? (
           <TouchableOpacity
             onPress={handleConfirm}
             style={{
@@ -291,12 +305,26 @@ export const PathScreen = ({ navigation, route }: Props) => {
               close the gap →
             </Text>
           </TouchableOpacity>
+        ) : allDecided && !anyLiked ? (
+          // All decided but nothing liked — grey button
+          <TouchableOpacity
+            onPress={handleConfirm}
+            style={{
+              backgroundColor: Colors.border,
+              borderRadius: 999, paddingVertical: 13,
+              alignItems: 'center', marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: Colors.muted, fontSize: 15, fontWeight: '700' }}>
+              continue anyway →
+            </Text>
+          </TouchableOpacity>
         ) : (
           <Text style={{
             textAlign: 'center', fontSize: 11, color: Colors.muted,
             marginBottom: 10,
           }}>
-            swipe left · right to browse · tap to choose
+            {cards.length - Object.keys(decisions).length} card{cards.length - Object.keys(decisions).length !== 1 ? 's' : ''} left to decide
           </Text>
         )}
 

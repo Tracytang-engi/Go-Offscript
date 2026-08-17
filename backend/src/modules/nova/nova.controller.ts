@@ -5,6 +5,7 @@ import { callNovaAgent } from './nova.agent';
 import {
   NOVA_PROFILE_SYSTEM_PROMPT,
   NOVA_CHAT_SYSTEM_PROMPT,
+  NOVA_NOVACHAT_SYSTEM_PROMPT,
   NOVA_REPATH_CHAT_SYSTEM_PROMPT,
   buildNovaProfilePrompt,
   buildNovaUserPrompt,
@@ -115,22 +116,28 @@ export const chat = async (req: Request, res: Response, next: NextFunction) => {
       userMessage: string;
       history: Array<{ role: 'user' | 'nova'; content: string }>;
       profileContext?: string;
-      mode?: 'repath';
+      mode?: 'repath' | 'novachat';
     };
 
     const isRepath = mode === 'repath';
-    const systemPrompt = isRepath ? NOVA_REPATH_CHAT_SYSTEM_PROMPT : NOVA_CHAT_SYSTEM_PROMPT;
+    const isNovachat = mode === 'novachat';
+    const systemPrompt = isRepath
+      ? NOVA_REPATH_CHAT_SYSTEM_PROMPT
+      : isNovachat
+        ? NOVA_NOVACHAT_SYSTEM_PROMPT
+        : NOVA_CHAT_SYSTEM_PROMPT;
 
     const conversationText = history
       .map((m) => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.content}`)
       .join('\n');
 
+    const turnNumber = Math.ceil(history.length / 2) + 1;
     const userPrompt = [
       profileContext ? `Profile context: ${profileContext}` : '',
       conversationText ? `Conversation so far:\n${conversationText}` : '',
       `User just said: "${userMessage}"`,
-      isRepath
-        ? `\nThis is turn ${Math.ceil(history.length / 2) + 1} of the repath conversation.`
+      (isRepath || isNovachat)
+        ? `\nThis is turn ${turnNumber} of the conversation.`
         : '\nRespond to what the user just shared.',
     ].filter(Boolean).join('\n\n');
 
@@ -139,12 +146,19 @@ export const chat = async (req: Request, res: Response, next: NextFunction) => {
       type: 'question' as const,
       options: ['A: creative / people-facing', 'B: analytical / technical'],
     };
+    const defaultNovachat = {
+      response: "that's good to know — do you prefer working more independently or collaboratively with a team?",
+      type: 'question' as const,
+      options: ['A: independently / deep focus', 'B: collaboratively / team energy'],
+    };
     const defaultChat = { response: "that's really interesting — thanks for sharing that. it'll help me find the right paths for you." };
+
+    const fallback = isRepath ? defaultRepath : isNovachat ? defaultNovachat : defaultChat;
 
     const result = await callPerplexityJson<{ response: string; type?: string; options?: string[] }>(
       systemPrompt,
       userPrompt,
-      isRepath ? defaultRepath : defaultChat
+      fallback
     );
 
     sendSuccess(res, result, 'Chat response generated');

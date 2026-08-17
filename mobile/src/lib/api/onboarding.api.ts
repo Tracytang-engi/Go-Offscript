@@ -106,7 +106,7 @@ export const novaApi = {
     userMessage: string,
     history: ChatMessage[],
     profileContext?: string,
-    mode?: 'repath'
+    mode?: 'repath' | 'novachat'
   ): Promise<{ response: string; type?: 'question' | 'statement'; options?: string[] }> => {
     try {
       const r = await apiClient.post<ApiResponse<{ response: string; type?: 'question' | 'statement'; options?: string[] }>>(
@@ -120,6 +120,13 @@ export const novaApi = {
           response: "sounds interesting — are you drawn more towards creative work or something more analytical?",
           type: 'question',
           options: ['A: creative / people-facing', 'B: analytical / technical'],
+        };
+      }
+      if (mode === 'novachat') {
+        return {
+          response: "that's helpful — do you prefer working independently or collaboratively with a team?",
+          type: 'question',
+          options: ['A: independently / deep focus', 'B: collaboratively / team energy'],
         };
       }
       return { response: "that's really helpful — thanks for sharing. i'll factor that in when finding your paths." };
