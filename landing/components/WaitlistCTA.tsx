@@ -5,36 +5,27 @@ import WaitlistForm from "./WaitlistForm";
 
 export default function WaitlistCTA() {
   return (
-    <section id="waitlist" className="bg-orange py-24">
-      <div className="max-w-2xl mx-auto px-6 text-center">
+    <section id="waitlist" style={{ backgroundColor: "#E8603A", padding: "96px 0" }}>
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
+          style={{ width: "100%" }}
         >
-          <span className="inline-block bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-6">
-            early access
-          </span>
-
-          <h2 className="text-4xl lg:text-5xl font-black text-white leading-tight mb-4">
-            Stop following the default path.
+          <h2 style={{ fontSize: 42, fontWeight: 900, color: "#FFFFFF", marginBottom: 12 }}>
+            Ready to go off script?
           </h2>
-          <p className="text-white/80 text-lg mb-10">
-            {
-              "We\u2019re letting in early users by invite. Drop your email and we\u2019ll reach out with access \u2014 no spam, ever."
-            }
+          <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 16, marginBottom: 36, lineHeight: 1.6 }}>
+            Join the waitlist and be first in line when we open to new users.
+            No spam — just an invite when your spot is ready.
           </p>
-
-          {/* Form — centred, light version */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-md">
-              <WaitlistForm size="large" />
-            </div>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <WaitlistForm size="large" variant="onOrange" />
           </div>
-
-          <p className="text-white/50 text-xs mt-6">
-            Built at the University of Cambridge &middot; No credit card required
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: 20 }}>
+            Free during beta. No credit card required.
           </p>
         </motion.div>
       </div>

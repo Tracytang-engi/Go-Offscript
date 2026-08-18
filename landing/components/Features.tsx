@@ -5,120 +5,102 @@ import { motion } from "framer-motion";
 const features = [
   {
     icon: "&#128196;",
-    title: "CV & Skills Extraction",
-    tag: "Smart Onboarding",
-    description:
-      "Upload your CV once. Nova reads it, pulls out your real skills, and builds an accurate picture of where you actually stand — no manual input, no guessing. It handles everything from Python to presentation skills.",
-    highlight: "Automatic, zero effort",
+    title: "CV Skill Extraction",
+    description: "Upload your PDF and Nova pulls out your real skills automatically — no manual tagging. Works with any format.",
+    highlight: "Powered by AI",
+    bg: "#FDE8E0",
+    accent: "#E8603A",
   },
   {
     icon: "&#10022;",
-    title: "Values & Interest Alignment",
-    tag: "Know Yourself",
-    description:
-      "Choose what genuinely matters to you — creativity, financial security, impact, flexibility. You can also upload your social media browsing history or describe your interests, and Nova's AI analyses them to build a fuller picture of who you are beyond your CV.",
-    highlight: "Goes deeper than any career quiz",
-  },
-  {
-    icon: "&#128172;",
     title: "Nova Chat",
-    tag: "AI Conversation",
-    description:
-      "A short back-and-forth with Nova that feels like talking to a smart friend. Nova asks 1–2 focused questions — sometimes offering A/B choices — then delivers a precise statement of your professional identity. It understands context that no form ever could.",
-    highlight: "Builds your portrait in minutes",
+    description: "A short, personalised conversation that builds your career profile. Nova asks, listens, and learns — not a generic quiz.",
+    highlight: "Adaptive AI",
+    bg: "#FAF5EE",
+    accent: "#E8603A",
   },
   {
-    icon: "&#128145;",
-    title: "Career Path Cards",
-    tag: "Personalised Paths",
-    description:
-      "Swipe through AI-generated career paths with match scores, skill gap analysis, and real explanations of why each one fits you. Like or skip each card to tell Nova what resonates. You can explore new directions anytime with a conversation, and liked paths are preserved.",
-    highlight: "Match scores + skill gaps for every path",
+    icon: "&#127752;",
+    title: "Career Path Matching",
+    description: "Tinder-style swipe cards for 3 AI-generated paths, each with match rate, what skills you already have, and what to build.",
+    highlight: "Swipe to decide",
+    bg: "#FDE8E0",
+    accent: "#E8603A",
   },
   {
-    icon: "&#128640;",
+    icon: "&#128269;",
     title: "Real Opportunities",
-    tag: "Curated for You",
-    description:
-      "Jobs, fellowships, short projects, coaching sessions, and in-person events — all filtered to your specific career paths. Nova searches in real time so results are always fresh, not a static database. Switch between paths to see what's out there for each direction.",
-    highlight: "Live search, not a stale database",
+    description: "Jobs, projects, and in-person events pulled from the live web and filtered to your exact paths — not generic job boards.",
+    highlight: "Live search",
+    bg: "#FAF5EE",
+    accent: "#E8603A",
   },
   {
-    icon: "&#128101;",
-    title: "Mentor Outreach",
-    tag: "Real Connections",
-    description:
-      "Nova finds real professionals in your target fields and generates a personalised cold message using your career portrait and their public profile. Edit the draft directly, or ask Nova to refine it ('make it shorter', 'sound more casual'). One tap to contact on LinkedIn.",
-    highlight: "AI-drafted messages that actually get replies",
+    icon: "&#128100;",
+    title: "Mentor Matching",
+    description: "Nova finds real LinkedIn professionals in your target fields and drafts personalised cold messages for you to send.",
+    highlight: "Real people",
+    bg: "#FDE8E0",
+    accent: "#E8603A",
+  },
+  {
+    icon: "&#128202;",
+    title: "Application Dashboard",
+    description: "Track saved opportunities, pending and completed applications — with a Nova chat button always one tap away.",
+    highlight: "Stay on track",
+    bg: "#FAF5EE",
+    accent: "#E8603A",
   },
 ];
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.5 },
-  }),
-};
-
 export default function Features() {
   return (
-    <section className="bg-white py-24 border-t border-border">
-      <div className="max-w-6xl mx-auto px-6">
+    <section style={{ backgroundColor: "#FAF5EE", padding: "96px 0", borderTop: "1px solid rgba(232,96,58,0.12)" }}>
+      <div style={{ maxWidth: 1152, margin: "0 auto", padding: "0 24px" }}>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          style={{ textAlign: "center", marginBottom: 64 }}
         >
-          <span className="inline-block text-orange text-xs font-bold uppercase tracking-widest mb-4">
+          <span style={{ color: "#E8603A", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", display: "block", marginBottom: 16 }}>
             features
           </span>
-          <h2 className="text-4xl font-black text-dark">
-            Everything you need to{" "}
-            <span className="text-orange">go off script.</span>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: "#1A1A1A", margin: 0 }}>
+            Everything you need to go off script.
           </h2>
-          <p className="text-muted mt-3 max-w-lg mx-auto">
-            Not a generic job board. Not another quiz. A full system that takes you from
-            confused to confident — and keeps helping as you grow.
+          <p style={{ color: "#6B7280", marginTop: 12, maxWidth: 440, margin: "12px auto 0" }}>
+            From CV to career path to first conversation — Nova handles the heavy lifting.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
           {features.map((f, i) => (
             <motion.div
               key={i}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              variants={cardVariants}
-              className="group bg-cream rounded-2xl p-6 border border-border hover:border-orange/40 hover:shadow-md transition-all duration-300 flex flex-col gap-4"
+              transition={{ delay: (i % 3) * 0.1, duration: 0.5 }}
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 20,
+                padding: 28,
+                border: "1px solid #E5E7EB",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
             >
-              {/* Icon + tag */}
-              <div className="flex items-start justify-between">
-                <div className="w-12 h-12 rounded-xl bg-orange-light flex items-center justify-center text-2xl">
-                  <span dangerouslySetInnerHTML={{ __html: f.icon }} />
-                </div>
-                <span className="text-[10px] font-bold text-orange bg-orange-light rounded-full px-2.5 py-1 uppercase tracking-wide">
-                  {f.tag}
-                </span>
+              <div style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: f.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
+                <span dangerouslySetInnerHTML={{ __html: f.icon }} />
               </div>
-
-              <div>
-                <h3 className="text-base font-black text-dark mb-2">{f.title}</h3>
-                <p className="text-sm text-muted leading-relaxed">{f.description}</p>
-              </div>
-
-              {/* Highlight pill */}
-              <div className="mt-auto">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-dark bg-white border border-border rounded-full px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange inline-block" />
-                  {f.highlight}
-                </span>
-              </div>
+              <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: f.accent }}>
+                {f.highlight}
+              </span>
+              <h3 style={{ fontSize: 17, fontWeight: 900, color: "#1A1A1A", margin: 0 }}>{f.title}</h3>
+              <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.65, margin: 0 }}>{f.description}</p>
             </motion.div>
           ))}
         </div>

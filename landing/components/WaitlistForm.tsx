@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   size?: "default" | "large";
+  variant?: "onOrange" | "onWhite";
 }
 
-export default function WaitlistForm({ size = "default" }: Props) {
+export default function WaitlistForm({ size = "default", variant = "onOrange" }: Props) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -16,9 +17,7 @@ export default function WaitlistForm({ size = "default" }: Props) {
   useEffect(() => {
     fetch("/api/waitlist?count=1")
       .then((r) => r.json())
-      .then((d) => {
-        if (typeof d.count === "number") setCount(d.count);
-      })
+      .then((d) => { if (typeof d.count === "number") setCount(d.count); })
       .catch(() => {});
   }, []);
 
@@ -48,6 +47,37 @@ export default function WaitlistForm({ size = "default" }: Props) {
   };
 
   const isLarge = size === "large";
+  const onOrange = variant === "onOrange";
+
+  const inputStyle: React.CSSProperties = {
+    flex: 1,
+    borderRadius: 14,
+    border: onOrange ? "1.5px solid rgba(255,255,255,0.7)" : "1.5px solid #E5E7EB",
+    backgroundColor: onOrange ? "rgba(255,255,255,0.92)" : "#FFFFFF",
+    color: onOrange ? "#1A1A1A" : "#1A1A1A",
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: isLarge ? 16 : 12,
+    paddingBottom: isLarge ? 16 : 12,
+    fontSize: isLarge ? 16 : 14,
+    outline: "none",
+  };
+
+  const btnStyle: React.CSSProperties = {
+    borderRadius: 14,
+    backgroundColor: onOrange ? "#FFFFFF" : "#E8603A",
+    color: onOrange ? "#E8603A" : "#FFFFFF",
+    fontWeight: 800,
+    paddingLeft: isLarge ? 32 : 20,
+    paddingRight: isLarge ? 32 : 20,
+    paddingTop: isLarge ? 16 : 12,
+    paddingBottom: isLarge ? 16 : 12,
+    fontSize: isLarge ? 16 : 14,
+    whiteSpace: "nowrap" as const,
+    cursor: "pointer",
+    border: "none",
+    transition: "opacity 0.15s",
+  };
 
   return (
     <div className="w-full">
@@ -59,17 +89,24 @@ export default function WaitlistForm({ size = "default" }: Props) {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-2 py-4"
           >
-            <span className="text-2xl">&#10003;</span>
-            <p className={`font-semibold text-dark ${isLarge ? "text-lg" : "text-base"}`}>
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black"
+              style={{ backgroundColor: onOrange ? "rgba(255,255,255,0.2)" : "#FDE8E0", color: onOrange ? "#fff" : "#E8603A" }}
+            >
+              &#10003;
+            </div>
+            <p className={`font-semibold ${onOrange ? "text-white" : "text-dark"} ${isLarge ? "text-lg" : "text-base"}`}>
               {"You're on the list!"}
             </p>
-            <p className="text-muted text-sm">{"We'll reach out with early access soon."}</p>
+            <p style={{ color: onOrange ? "rgba(255,255,255,0.7)" : "#6B7280", fontSize: 14 }}>
+              {"We'll reach out with early access soon."}
+            </p>
           </motion.div>
         ) : (
           <motion.form
             key="form"
             onSubmit={handleSubmit}
-            className={`flex flex-col sm:flex-row gap-3 w-full ${isLarge ? "max-w-lg mx-auto" : "max-w-md"}`}
+            style={{ display: "flex", flexDirection: "row", gap: 10, width: "100%", maxWidth: isLarge ? 480 : 400, flexWrap: "wrap" }}
           >
             <input
               type="email"
@@ -77,29 +114,26 @@ export default function WaitlistForm({ size = "default" }: Props) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className={`flex-1 rounded-xl border border-border bg-white px-4 outline-none focus:border-orange transition-colors text-dark placeholder:text-muted ${isLarge ? "py-4 text-base" : "py-3 text-sm"}`}
+              style={{ ...inputStyle, minWidth: 180, flexGrow: 1 }}
             />
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className={`rounded-xl bg-orange text-white font-bold whitespace-nowrap hover:bg-orange/90 transition-colors disabled:opacity-60 ${isLarge ? "px-8 py-4 text-base" : "px-6 py-3 text-sm"}`}
-            >
+            <button type="submit" disabled={status === "loading"} style={{ ...btnStyle, opacity: status === "loading" ? 0.7 : 1 }}>
               {status === "loading" ? "joining..." : "get early access \u2192"}
             </button>
           </motion.form>
         )}
       </AnimatePresence>
 
-      {/* Live count + error */}
-      <div className="mt-2 min-h-[20px]">
+      <div style={{ marginTop: 10, minHeight: 20 }}>
         {status === "error" && (
-          <p className="text-sm text-red-500">{errorMsg}</p>
+          <p style={{ fontSize: 13, color: onOrange ? "rgba(255,255,255,0.8)" : "#EF4444" }}>{errorMsg}</p>
         )}
-        {status !== "success" && count !== null && count > 0 && (
-          <p
-            className={`text-muted ${isLarge ? "text-sm text-center" : "text-xs"}`}
-          >
-            Join {count.toLocaleString()} {count === 1 ? "person" : "others"} already on the waitlist
+        {status !== "success" && (
+          <p style={{ fontSize: 13, color: onOrange ? "rgba(255,255,255,0.65)" : "#6B7280" }}>
+            {count === null
+              ? "loading waitlist count..."
+              : count === 0
+              ? "Be the first on the waitlist!"
+              : `${count.toLocaleString()} ${count === 1 ? "person" : "people"} already joined`}
           </p>
         )}
       </div>
