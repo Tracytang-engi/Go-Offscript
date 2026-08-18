@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #FAF5EE;
+  --orange: #E8603A;
+  --orange-light: #FDE8E0;
+  --orange-muted: #F4A68A;
+  --dark: #1A1A1A;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --white: #FFFFFF;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--dark);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

@@ -14,6 +14,7 @@ import pathRoutes from './modules/path/path.routes';
 import opportunityRoutes from './modules/opportunity/opportunity.routes';
 import novaRoutes from './modules/nova/nova.routes';
 import mentorRoutes from './modules/mentor/mentor.routes';
+import waitlistRoutes from './modules/waitlist/waitlist.routes';
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/path', pathRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/nova', novaRoutes);
 app.use('/api/mentors', mentorRoutes);
+app.use('/api/waitlist', waitlistRoutes);
 
 app.use(errorHandler);
 

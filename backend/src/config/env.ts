@@ -15,4 +15,5 @@ export const env = {
   PERPLEXITY_GROUP_ID: process.env.PERPLEXITY_GROUP_ID ?? '',
   SMTP_USER: process.env.SMTP_USER ?? '',
   SMTP_PASS: process.env.SMTP_PASS ?? '',
+  ADMIN_KEY: process.env.ADMIN_KEY ?? 'changeme',
 } as const;
