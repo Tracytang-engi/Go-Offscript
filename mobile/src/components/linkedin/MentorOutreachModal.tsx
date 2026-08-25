@@ -48,6 +48,8 @@ export const MentorOutreachModal = ({
   const [otherDetail, setOtherDetail] = useState('');
   const [followupQuestion, setFollowupQuestion] = useState('');
   const [followUpAnswer, setFollowUpAnswer] = useState('');
+  // O3: optional research before generating message
+  const [researchMentor, setResearchMentor] = useState(false);
   // Editable generated message
   const [editedMessage, setEditedMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -67,6 +69,7 @@ export const MentorOutreachModal = ({
       setOtherDetail('');
       setFollowupQuestion('');
       setFollowUpAnswer('');
+      setResearchMentor(false);
       // Pre-fill saved message if exists, else empty
       setEditedMessage(mentor.savedMessage ?? '');
       setLoading(false);
@@ -118,6 +121,7 @@ export const MentorOutreachModal = ({
       purpose,
       purposeDetail: purpose === 'other' ? otherDetail.trim() : undefined,
       followUpAnswer: followUpAnswer.trim(),
+      researchMentor,
     });
     setEditedMessage(res.message ?? '');
     setWizStep('result');
@@ -320,6 +324,47 @@ export const MentorOutreachModal = ({
                         padding: 12, minHeight: 88, fontSize: 14, color: Colors.dark, marginBottom: 12,
                       }}
                     />
+                    <TouchableOpacity
+                      onPress={() => setResearchMentor((v) => !v)}
+                      activeOpacity={0.8}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 10,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 12,
+                        marginBottom: 12,
+                        borderWidth: 1.5,
+                        borderColor: researchMentor ? Colors.orange : Colors.border,
+                        backgroundColor: researchMentor ? Colors.orangeLight : Colors.white,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 4,
+                          borderWidth: 1.5,
+                          borderColor: researchMentor ? Colors.orange : Colors.muted,
+                          backgroundColor: researchMentor ? Colors.orange : Colors.white,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {researchMentor ? (
+                          <Text style={{ color: Colors.white, fontSize: 12, fontWeight: '800' }}>{'\u2713'}</Text>
+                        ) : null}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: '700', color: Colors.dark, fontSize: 13 }}>
+                          research this mentor
+                        </Text>
+                        <Text style={{ fontSize: 11, color: Colors.muted, marginTop: 2 }}>
+                          optional — uses People Search to enrich the draft (slower)
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
                     <TouchableOpacity
                       onPress={handleGenerate}
                       disabled={loading}

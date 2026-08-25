@@ -38,6 +38,8 @@ export const NovaChatScreen = ({ navigation }: Props) => {
   const [sending, setSending] = useState(false);
   // Latest structured reply from Nova
   const [latestReply, setLatestReply] = useState<NovaReply | null>(null);
+  // S1: Agent previous_response_id kept in memory for this screen session only
+  const previousResponseIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     novaApi.getProfile({ skills, values: selectedValues }).then((result) => {
@@ -66,7 +68,17 @@ export const NovaChatScreen = ({ navigation }: Props) => {
     setHistory(newHistory);
     scrollToBottom();
 
-    const result = await novaApi.chat(userMessage, newHistory, profileSummary, 'novachat');
+    const result = await novaApi.chat(
+      userMessage,
+      newHistory,
+      profileSummary,
+      'novachat',
+      previousResponseIdRef.current
+    );
+
+    if (result.responseId) {
+      previousResponseIdRef.current = result.responseId;
+    }
 
     const reply: NovaReply = {
       response: result.response,

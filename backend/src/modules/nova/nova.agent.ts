@@ -1,8 +1,7 @@
-import { env } from '../../config/env';
 import type { NovaInput, NovaOutput } from './nova.types';
 import { NOVA_SYSTEM_PROMPT, buildNovaUserPrompt } from './nova.prompt';
-
-const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
+import { callAgentJson } from '../../lib/perplexity/agent';
+import { novaPathSchema } from '../../lib/perplexity/schemas';
 
 // Mock output for when Cloudinary/Perplexity isn't configured yet (dev fallback)
 const MOCK_OUTPUT: NovaOutput = {
@@ -27,7 +26,7 @@ const MOCK_OUTPUT: NovaOutput = {
     'Build a side portfolio of any visual/creative work you have',
     'Connect with people doing finance + brand work at companies like Goldman or BlackRock',
   ],
-  explanation: "okay i see you — creativity AND financial security, plus your TikTok says architecture is lowkey your thing. here's your path — no filter 🎯",
+  explanation: "okay i see you — creativity AND financial security, plus your TikTok says architecture is lowkey your thing. here's your path — no filter",
   opportunities: [
     {
       title: 'Goldman Sachs Summer Analyst',
@@ -53,13 +52,8 @@ const MOCK_OUTPUT: NovaOutput = {
   ],
 };
 
+/** Path generation via Agent API with web_search to ground role realism */
 export const callNovaAgent = async (input: NovaInput): Promise<NovaOutput> => {
-  // Fall back to mock if API key not configured
-  if (!env.PERPLEXITY_API_KEY) {
-    console.warn('[Nova] No API key — returning mock output');
-    return MOCK_OUTPUT;
-  }
-
   const userPrompt = buildNovaUserPrompt({
     skills: input.skills,
     values: input.values,
@@ -68,44 +62,23 @@ export const callNovaAgent = async (input: NovaInput): Promise<NovaOutput> => {
     chatSummary: input.chatSummary,
   });
 
-  const response = await fetch(PERPLEXITY_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.PERPLEXITY_API_KEY}`,
-      ...(env.PERPLEXITY_GROUP_ID ? { 'X-Group-Id': env.PERPLEXITY_GROUP_ID } : {}),
-    },
-    body: JSON.stringify({
-      model: 'sonar-pro',
-      messages: [
-        { role: 'system', content: NOVA_SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
+  const { data } = await callAgentJson<NovaOutput>(
+    {
+      preset: 'low',
+      instructions: `${NOVA_SYSTEM_PROMPT}\n\nUse web search to verify that recommended path titles are real, currently relevant career directions. Keep the JSON schema exactly.`,
+      input: userPrompt,
+      tools: [{ type: 'web_search' }],
+      responseFormat: novaPathSchema,
+      maxOutputTokens: 2500,
       temperature: 0.7,
-      max_tokens: 2000,
-    }),
-  });
+    },
+    MOCK_OUTPUT
+  );
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('[Nova] Perplexity API error:', error);
-    console.warn('[Nova] Falling back to mock output');
+  if (!data.primaryPath?.title) {
+    console.warn('[Nova] Invalid path payload — using mock');
     return MOCK_OUTPUT;
   }
 
-  const data = await response.json() as {
-    choices: Array<{ message: { content: string } }>;
-  };
-
-  const content = data.choices?.[0]?.message?.content ?? '';
-
-  try {
-    // Strip any accidental markdown code fences
-    const cleaned = content.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    const parsed = JSON.parse(cleaned) as NovaOutput;
-    return parsed;
-  } catch (err) {
-    console.error('[Nova] Failed to parse Perplexity response:', content, err);
-    return MOCK_OUTPUT;
-  }
+  return data;
 };

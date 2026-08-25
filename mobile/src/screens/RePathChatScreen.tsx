@@ -35,6 +35,8 @@ export const RePathChatScreen = ({ navigation }: Props) => {
   const [sending, setSending] = useState(false);
   // Tracks the latest Nova reply with type + options
   const [latestReply, setLatestReply] = useState<NovaReply | null>(null);
+  // S1: Agent previous_response_id for this screen session only
+  const previousResponseIdRef = useRef<string | undefined>(undefined);
 
   const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -50,7 +52,17 @@ export const RePathChatScreen = ({ navigation }: Props) => {
     setHistory(newHistory);
     scrollToBottom();
 
-    const result = await novaApi.chat(userMessage, newHistory, chatSummary || '', 'repath');
+    const result = await novaApi.chat(
+      userMessage,
+      newHistory,
+      chatSummary || '',
+      'repath',
+      previousResponseIdRef.current
+    );
+
+    if (result.responseId) {
+      previousResponseIdRef.current = result.responseId;
+    }
 
     const reply: NovaReply = {
       response: result.response,

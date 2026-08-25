@@ -4,10 +4,12 @@ import { env } from '../../config/env';
 import { AppError } from '../../middleware/errorHandler';
 import { Readable } from 'stream';
 import type { UploadedFile } from '../../types/multer';
+import { callAgentJson, MODEL_FAST } from '../../lib/perplexity/agent';
+import { skillsSchema } from '../../lib/perplexity/schemas';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse');
 
-// ─── AI-powered skill extraction ─────────────────────────────────────────────
+// ─── AI-powered skill extraction (Agent API, no web search) ──────────────────
 
 const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
   console.log(`[CV] extractSkillsWithAI: textLength=${cvText.length}, hasApiKey=${!!env.PERPLEXITY_API_KEY}`);
@@ -21,56 +23,28 @@ const extractSkillsWithAI = async (cvText: string): Promise<string[]> => {
     return [];
   }
 
-  try {
-    const res = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.PERPLEXITY_API_KEY}`,
-        ...(env.PERPLEXITY_GROUP_ID ? { 'X-Group-Id': env.PERPLEXITY_GROUP_ID } : {}),
-      },
-      body: JSON.stringify({
-        model: 'sonar',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a CV analyser. Extract 5-8 key professional skills from the CV text. 
-Reply with ONLY a comma-separated list of skill names — nothing else. No bullets, no numbers, no explanation.
-Example: Financial Modelling, Python, Client Management, Figma, Data Analysis`,
-          },
-          {
-            role: 'user',
-            content: cvText.slice(0, 4000),
-          },
-        ],
-        temperature: 0.1,
-        max_tokens: 150,
-      }),
-    });
+  const { data } = await callAgentJson<{ skills: string[] }>(
+    {
+      model: MODEL_FAST,
+      instructions:
+        'You are a CV analyser. Extract 5-8 key professional skills from the CV text. Return concise skill names only.',
+      input: cvText.slice(0, 4000),
+      responseFormat: skillsSchema,
+      maxOutputTokens: 300,
+      temperature: 0.1,
+      maxToolCalls: 0,
+    },
+    { skills: [] }
+  );
 
-    if (!res.ok) {
-      const body = await res.text();
-      console.warn(`[CV] Perplexity API error ${res.status}:`, body);
-      return fallbackExtract(cvText);
-    }
+  const skills = (data.skills ?? [])
+    .map((s) => s.replace(/^[\s\-\*\d.]+/, '').trim())
+    .filter((s) => s.length > 1 && s.length < 60);
 
-    const data = await res.json() as { choices: Array<{ message: { content: string } }> };
-    const content = (data.choices?.[0]?.message?.content ?? '').trim();
-    console.log('[CV] Perplexity raw response:', content);
+  console.log('[CV] Parsed skills:', skills);
 
-    const skills = content
-      .split(',')
-      .map((s) => s.replace(/^[\s\-\*\d\.]+/, '').trim())
-      .filter((s) => s.length > 1 && s.length < 60);
-
-    console.log('[CV] Parsed skills:', skills);
-
-    if (skills.length === 0) return fallbackExtract(cvText);
-    return skills.slice(0, 8);
-  } catch (err) {
-    console.warn('[CV] AI skill extraction threw:', err);
-    return fallbackExtract(cvText);
-  }
+  if (skills.length === 0) return fallbackExtract(cvText);
+  return skills.slice(0, 8);
 };
 
 // ─── Fallback: keyword matching for when AI is unavailable ───────────────────

@@ -108,12 +108,35 @@ export const novaApi = {
     userMessage: string,
     history: ChatMessage[],
     profileContext?: string,
-    mode?: 'repath' | 'novachat'
-  ): Promise<{ response: string; type?: 'question' | 'statement'; options?: string[]; portraitBullets?: string[] }> => {
+    mode?: 'repath' | 'novachat',
+    previousResponseId?: string
+  ): Promise<{
+    response: string;
+    type?: 'question' | 'statement';
+    options?: string[];
+    portraitBullets?: string[];
+    responseId?: string;
+    usedWebSearch?: boolean;
+  }> => {
     try {
-      const r = await apiClient.post<ApiResponse<{ response: string; type?: 'question' | 'statement'; options?: string[]; portraitBullets?: string[] }>>(
+      const r = await apiClient.post<
+        ApiResponse<{
+          response: string;
+          type?: 'question' | 'statement';
+          options?: string[];
+          portraitBullets?: string[];
+          responseId?: string;
+          usedWebSearch?: boolean;
+        }>
+      >(
         '/nova/chat',
-        { userMessage, history, profileContext, ...(mode ? { mode } : {}) }
+        {
+          userMessage,
+          history,
+          profileContext,
+          ...(mode ? { mode } : {}),
+          ...(previousResponseId ? { previousResponseId } : {}),
+        }
       );
       return r.data.data;
     } catch {
@@ -145,12 +168,13 @@ export const novaApi = {
     purpose: 'job' | 'chat' | 'other';
     purposeDetail?: string;
     followUpAnswer?: string;
-  }): Promise<{ question?: string; message?: string }> => {
+    researchMentor?: boolean;
+  }): Promise<{ question?: string; message?: string; researched?: boolean }> => {
     try {
-      const r = await apiClient.post<ApiResponse<{ question?: string; message?: string }>>(
+      const r = await apiClient.post<ApiResponse<{ question?: string; message?: string; researched?: boolean }>>(
         '/nova/linkedin-outreach',
         body,
-        { timeout: 60000 }
+        { timeout: 90000 }
       );
       return r.data.data;
     } catch {
