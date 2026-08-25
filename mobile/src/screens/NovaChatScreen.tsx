@@ -11,6 +11,7 @@ import { ProgressDots } from '../components/ui/ProgressDots';
 import { Colors } from '../constants/colors';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
 import { novaApi } from '../lib/api/onboarding.api';
+import { apiClient } from '../lib/api/client';
 import type { ChatMessage } from '../types';
 
 type Props = {
@@ -24,7 +25,7 @@ type NovaReply = {
 };
 
 export const NovaChatScreen = ({ navigation }: Props) => {
-  const { skills, selectedValues, setChatSummary, setPortraitBullets } = useOnboardingStore();
+  const { skills, selectedValues, setChatSummary, setPortraitBullets, appendChatIfEnabled } = useOnboardingStore();
   const scrollRef = useRef<ScrollView>(null);
 
   const [profileSummary, setProfileSummary] = useState('');
@@ -52,6 +53,26 @@ export const NovaChatScreen = ({ navigation }: Props) => {
       // Opening question from getProfile is always a question — no confirm yet
       setLatestReply({ response: result.openingQuestion, type: 'question' });
     });
+
+    // If user opted into chat persistence, restore prior novachat turns
+    if (useOnboardingStore.getState().saveChatHistory) {
+      apiClient
+        .get('/users/me/chat-messages', { params: { sessionKey: 'novachat' } })
+        .then((r) => {
+          const rows = (r.data?.data ?? []) as Array<{ role: string; content: string }>;
+          if (!rows.length) return;
+          const restored: ChatMessage[] = rows.map((m) => ({
+            role: m.role === 'user' ? 'user' : 'nova',
+            content: m.content,
+          }));
+          setHistory(restored);
+          const last = restored[restored.length - 1];
+          if (last?.role === 'nova') {
+            setLatestReply({ response: last.content, type: 'statement' });
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const scrollToBottom = () =>
@@ -66,6 +87,7 @@ export const NovaChatScreen = ({ navigation }: Props) => {
 
     const newHistory: ChatMessage[] = [...history, { role: 'user', content: userMessage }];
     setHistory(newHistory);
+    appendChatIfEnabled('novachat', 'user', userMessage);
     scrollToBottom();
 
     const result = await novaApi.chat(
@@ -94,6 +116,7 @@ export const NovaChatScreen = ({ navigation }: Props) => {
     setLatestReply(reply);
     const updatedHistory: ChatMessage[] = [...newHistory, { role: 'nova', content: result.response }];
     setHistory(updatedHistory);
+    appendChatIfEnabled('novachat', 'nova', result.response);
     setSending(false);
     scrollToBottom();
   };

@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '../../types';
 import { MOCK_TOKEN } from '../api/mock';
+import { meApi } from '../api/me.api';
+import { useOnboardingStore } from './onboarding.store';
 
 interface AuthState {
   user: User | null;
@@ -14,6 +16,16 @@ interface AuthState {
   loadStoredAuth: () => Promise<void>;
 }
 
+const hydrateUserData = async () => {
+  const data = await meApi.bootstrap();
+  if (data) {
+    await useOnboardingStore.getState().hydrateFromBootstrap(data);
+    if (data.profile.onboardingDone) {
+      await AsyncStorage.setItem('onboarding_complete', 'true');
+    }
+  }
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
@@ -24,17 +36,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: async (user, token) => {
     const offline = token === MOCK_TOKEN;
     if (!offline) {
-      // Only persist real tokens — offline tokens live in memory only
       await AsyncStorage.setItem('auth_token', token);
       await AsyncStorage.setItem('auth_user', JSON.stringify(user));
     }
     set({ user, token, isOffline: offline });
+    if (!offline) {
+      await hydrateUserData();
+      const done = useOnboardingStore.getState().onboardingComplete;
+      set({ onboardingComplete: done });
+    }
   },
 
   clearAuth: async () => {
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('auth_user');
-    set({ user: null, token: null, isOffline: false });
+    set({ user: null, token: null, isOffline: false, onboardingComplete: false });
   },
 
   loadStoredAuth: async () => {
@@ -51,6 +67,12 @@ export const useAuthStore = create<AuthState>((set) => ({
           isOffline: false,
           onboardingComplete: onboardingFlag === 'true',
         });
+        await hydrateUserData();
+        const done = useOnboardingStore.getState().onboardingComplete;
+        if (done) {
+          set({ onboardingComplete: true });
+          await AsyncStorage.setItem('onboarding_complete', 'true');
+        }
       }
     } finally {
       set({ isLoading: false });

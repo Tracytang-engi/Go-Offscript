@@ -26,7 +26,7 @@ type NovaReply = {
 };
 
 export const RePathChatScreen = ({ navigation }: Props) => {
-  const { chatSummary, appendChatSummary } = useOnboardingStore();
+  const { chatSummary, appendChatSummary, appendChatIfEnabled } = useOnboardingStore();
   const { colors, fs } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -50,6 +50,7 @@ export const RePathChatScreen = ({ navigation }: Props) => {
 
     const newHistory: ChatMessage[] = [...history, { role: 'user', content: userMessage }];
     setHistory(newHistory);
+    appendChatIfEnabled('repath', 'user', userMessage);
     scrollToBottom();
 
     const result = await novaApi.chat(
@@ -73,6 +74,7 @@ export const RePathChatScreen = ({ navigation }: Props) => {
     setLatestReply(reply);
     const updatedHistory: ChatMessage[] = [...newHistory, { role: 'nova', content: result.response }];
     setHistory(updatedHistory);
+    appendChatIfEnabled('repath', 'nova', result.response);
     setSending(false);
     scrollToBottom();
   };

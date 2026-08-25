@@ -17,7 +17,7 @@ type Props = {
 export const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { clearAuth, user } = useAuthStore();
-  const { reset } = useOnboardingStore();
+  const { reset, saveChatHistory, setSaveChatHistory } = useOnboardingStore();
   const { darkMode, fontSize, toggleDarkMode, setFontSize } = useThemeStore();
   const { colors, fs } = useTheme();
 
@@ -193,6 +193,18 @@ export const SettingsScreen = ({ navigation }: Props) => {
         {/* ── Privacy ───────────────────────────────────── */}
         <SectionHeader title="Privacy" />
         <View style={{ borderRadius: 14, overflow: 'hidden', marginHorizontal: 20 }}>
+          <SettingRow
+            label="save chat history"
+            subtitle={
+              saveChatHistory
+                ? 'on — Nova conversations are stored on your account'
+                : 'off — chats are not kept after you leave the screen'
+            }
+            switchValue={saveChatHistory}
+            onSwitchChange={(v) => {
+              void setSaveChatHistory(v);
+            }}
+          />
           <SettingRow
             label="data sharing"
             subtitle="allow Nova to improve using your data — coming soon"

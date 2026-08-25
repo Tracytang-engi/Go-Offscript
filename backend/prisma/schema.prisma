@@ -20,13 +20,16 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  profile       UserProfile?
-  cvUploads     CvUpload[]
-  socialSignals SocialSignal[]
-  userValues    UserValue[]
-  careerPaths   CareerPath[]
-  sessions      Session[]
-  events        UserEvent[]
+  profile            UserProfile?
+  cvUploads          CvUpload[]
+  socialSignals      SocialSignal[]
+  userValues         UserValue[]
+  careerPaths        CareerPath[]
+  sessions           Session[]
+  events             UserEvent[]
+  savedOpportunities UserSavedOpportunity[]
+  savedMentors       UserSavedMentor[]
+  chatMessages       ChatMessage[]
 
   @@index([email])
   @@map("users")
@@ -49,19 +52,79 @@ model Session {
 // ─── User Profile & Persona ───────────────────────────────────────────────────
 
 model UserProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  bio              String?
+  avatarUrl        String?
+  location         String?
+  age              String?
+  school           String?
+  region           String?
+  portraitBullets  Json?    // string[]
+  chatSummary      String?  // compact summary (always optional)
+  saveChatHistory  Boolean  @default(false) // settings toggle — full transcript
+  likedPathTitles  String[] @default([])
+  skippedPathTitles String[] @default([])
+  pathSnapshot     Json?    // full CareerPath UI object
+  connectedPlatforms String[] @default([])
+  novaPersona      Json?    // AI-generated user persona snapshot
+  onboardingDone   Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// ─── User-saved Ways In items ─────────────────────────────────────────────────
+
+model UserSavedOpportunity {
+  id        String   @id @default(cuid())
+  userId    String
+  clientKey String   // frontend opportunity id
+  snapshot  Json     // Opportunity payload for offline/UI restore
+  status    String   @default("PENDING") // PENDING | COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientKey])
+  @@index([userId])
+  @@map("user_saved_opportunities")
+}
+
+model UserSavedMentor {
   id           String   @id @default(cuid())
-  userId       String   @unique
-  bio          String?
-  avatarUrl    String?
-  location     String?
-  novaPersona  Json?    // AI-generated user persona snapshot
-  onboardingDone Boolean @default(false)
+  userId       String
+  clientKey    String
+  snapshot     Json
+  contacted    Boolean  @default(false)
+  savedMessage String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("user_profiles")
+  @@unique([userId, clientKey])
+  @@index([userId])
+  @@map("user_saved_mentors")
+}
+
+/// Full Nova chat turns — only written when UserProfile.saveChatHistory = true
+model ChatMessage {
+  id         String   @id @default(cuid())
+  userId     String
+  sessionKey String   // novachat | repath | dashboard
+  role       String   // user | nova
+  content    String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sessionKey])
+  @@map("chat_messages")
 }
 
 // ─── CV & Skills ──────────────────────────────────────────────────────────────

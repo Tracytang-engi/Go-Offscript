@@ -240,7 +240,7 @@ export const WaysInScreen = ({ navigation, route }: Props) => {
               key={opp.id}
               opportunity={opp}
               saved={savedOpportunityIds.includes(opp.id)}
-              onToggleSave={() => toggleSavedOpp(opp.id)}
+              onToggleSave={() => toggleSavedOpp(opp.id, opp)}
             />
           ))}
         </View>
