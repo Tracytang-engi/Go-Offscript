@@ -21,16 +21,19 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Go Off Script. All rights reserved.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 28 }}>
-          {["Privacy", "Terms", "Contact"].map((link) => (
-            <a
-              key={link}
-              href="#"
-              style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, textDecoration: "none" }}
-            >
-              {link}
-            </a>
-          ))}
+        <div style={{ display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
+          <a href="#" style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, textDecoration: "none" }}>
+            Privacy
+          </a>
+          <a href="#" style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, textDecoration: "none" }}>
+            Terms
+          </a>
+          <a
+            href="mailto:gooffscript6@gmail.com"
+            style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, textDecoration: "none" }}
+          >
+            gooffscript6@gmail.com
+          </a>
         </div>
       </div>
     </footer>
