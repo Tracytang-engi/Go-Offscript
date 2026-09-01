@@ -4,17 +4,17 @@ import { motion } from "framer-motion";
 
 const quotes = [
   {
-    text: "I had no idea what I actually wanted to do after graduation. Nova asked me three questions and surfaced paths I'd never considered — one of them is exactly where I'm heading now.",
+    text: "I had no idea what I wanted after graduation. Nova asked three questions and surfaced paths I'd never considered — one of them is exactly where I'm heading now.",
     name: "Priya S.",
     detail: "Economics, Cambridge",
   },
   {
-    text: "The mentor feature is insane. I got a properly personalised cold message drafted in 30 seconds and actually heard back from someone senior at McKinsey.",
+    text: "The mentor feature is insane. I got a personalised cold message in 30 seconds and actually heard back from someone senior.",
     name: "James T.",
     detail: "Engineering, Cambridge",
   },
   {
-    text: "Finally something that doesn't just tell you to 'network more'. Nova gives you specific, real opportunities. Feels like having a career advisor available 24/7.",
+    text: "Finally something that doesn't just say 'network more'. Nova gives specific, real opportunities. Feels like a career advisor on tap.",
     name: "Mei L.",
     detail: "Natural Sciences, Cambridge",
   },
@@ -22,92 +22,83 @@ const quotes = [
 
 export default function SocialProof() {
   return (
-    <section style={{ backgroundColor: "#FAF5EE", padding: "96px 0", borderTop: "1px solid rgba(232,96,58,0.15)" }}>
-      <div style={{ maxWidth: 1152, margin: "0 auto", padding: "0 24px" }}>
-        {/* Cambridge badge */}
+    <section
+      className="py-24 relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, #FFF8F3 0%, #FFE8DC 40%, #FFF5F0 100%)",
+      }}
+    >
+      <div className="max-w-5xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 56 }}
+          className="text-center mb-12"
         >
-          <div style={{ marginBottom: 16 }}>
-            <CambridgeShield />
-          </div>
-          <p style={{ fontSize: 22, fontWeight: 900, color: "#1A1A1A", textAlign: "center", margin: 0 }}>
-            Built by Cambridge students.
-          </p>
-          <p style={{ color: "#6B7280", textAlign: "center", marginTop: 6, fontSize: 15 }}>
-            Tested with Cambridge students — and the feedback speaks for itself.
+          <span
+            className="inline-block text-[11px] font-bold uppercase tracking-widest mb-3 px-3 py-1 rounded-full"
+            style={{ backgroundColor: "rgba(232,96,58,0.12)", color: "#E8603A" }}
+          >
+            social proof
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: "#2A2A2A" }}>
+            built with Cambridge students.
+          </h2>
+          <p className="mt-3 text-[15px]" style={{ color: "#7A8494" }}>
+            beta testers said it better than we could.
           </p>
         </motion.div>
 
-        {/* Quote cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {quotes.map((q, i) => (
             <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 28 }}
+              key={q.name}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.12, duration: 0.5 }}
+              transition={{ delay: i * 0.1 }}
+              className="rounded-3xl p-6 flex flex-col gap-4"
               style={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: 20,
-                padding: 24,
-                border: "1px solid #E5E7EB",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
+                backgroundColor: "rgba(255,255,255,0.92)",
+                border: "1px solid rgba(232,96,58,0.12)",
+                boxShadow: "0 8px 24px rgba(232,96,58,0.07)",
               }}
             >
-              <div style={{ display: "flex", gap: 2 }}>
+              <div className="flex gap-0.5">
                 {Array.from({ length: 5 }).map((_, s) => (
-                  <span key={s} style={{ color: "#E8603A", fontSize: 14 }}>&#9733;</span>
+                  <span key={s} style={{ color: "#E8603A", fontSize: 13 }}>★</span>
                 ))}
               </div>
-              <p style={{ color: "#1A1A1A", fontSize: 14, lineHeight: 1.65, flex: 1, margin: 0 }}>
+              <p className="text-sm leading-relaxed flex-1" style={{ color: "#3A3A3A" }}>
                 &ldquo;{q.text}&rdquo;
               </p>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>{q.name}</p>
-                <p style={{ fontSize: 12, color: "#6B7280", margin: "2px 0 0" }}>{q.detail}</p>
+                <p className="text-sm font-bold" style={{ color: "#2A2A2A" }}>{q.name}</p>
+                <p className="text-xs mt-0.5" style={{ color: "#8A93A3" }}>{q.detail}</p>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Stats row */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          style={{ marginTop: 56, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 48 }}
+          className="mt-14 flex flex-wrap justify-center gap-10"
         >
           {[
-            { value: "100%", label: "of beta testers would recommend to a friend" },
-            { value: "3 min", label: "average time to your first career path" },
-            { value: "Cambridge", label: "University — where we built and tested it" },
+            { value: "100%", label: "of beta testers would recommend" },
+            { value: "3 min", label: "to your first career path" },
+            { value: "Cambridge", label: "where we built & tested it" },
           ].map((stat) => (
-            <div key={stat.label} style={{ textAlign: "center" }}>
-              <p style={{ fontSize: 32, fontWeight: 900, color: "#E8603A", margin: 0 }}>{stat.value}</p>
-              <p style={{ fontSize: 13, color: "#6B7280", marginTop: 4, maxWidth: 180 }}>{stat.label}</p>
+            <div key={stat.label} className="text-center">
+              <p className="text-3xl font-extrabold" style={{ color: "#E8603A" }}>{stat.value}</p>
+              <p className="text-xs mt-1 max-w-[140px]" style={{ color: "#7A8494" }}>{stat.label}</p>
             </div>
           ))}
         </motion.div>
       </div>
     </section>
-  );
-}
-
-function CambridgeShield() {
-  return (
-    <svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M24 2L44 10V28C44 40 34 50 24 54C14 50 4 40 4 28V10L24 2Z" fill="#FDE8E0" stroke="#E8603A" strokeWidth="2" />
-      <path d="M22 14H26V42H22V14Z" fill="#E8603A" />
-      <path d="M10 24H38V28H10V24Z" fill="#E8603A" />
-    </svg>
   );
 }

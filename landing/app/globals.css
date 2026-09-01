@@ -1,16 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #FAF5EE;
+  --color-cream: #FFF8F3;
   --color-orange: #E8603A;
   --color-orange-light: #FDE8E0;
-  --color-orange-muted: #F4A68A;
-  --color-dark: #1A1A1A;
+  --color-orange-soft: #FFB088;
+  --color-peach: #FFD4C2;
+  --color-lilac: #E8D4F8;
+  --color-mint: #D4F5EE;
+  --color-sky: #D6E8FF;
+  --color-dark: #2A2A2A;
   --color-muted: #6B7280;
-  --color-border: #E5E7EB;
+  --color-border: #F0E4DC;
   --color-white: #FFFFFF;
 
-  --font-family-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-family-sans: var(--font-jakarta), system-ui, sans-serif;
 }
 
 * {
@@ -22,8 +26,37 @@ html {
 }
 
 body {
-  background-color: var(--color-orange);
-  color: #FFFFFF;
-  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  background-color: var(--color-cream);
+  color: var(--color-dark);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Soft aurora background used across sections */
+.aurora-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(232, 96, 58, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 15%, rgba(255, 176, 136, 0.45) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 70% 80%, rgba(214, 232, 255, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 20% 85%, rgba(232, 212, 248, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255, 212, 194, 0.35) 0%, transparent 60%),
+    #FFF8F3;
+}
+
+.brand-gradient {
+  background: linear-gradient(105deg, #E8603A 0%, #F4A068 28%, #5EC4B6 55%, #7B8CFF 78%, #B07AFF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cta-gradient {
+  background: linear-gradient(90deg, #E8603A 0%, #F07850 45%, #FF8A5B 100%);
+}
+
+.sparkle {
+  position: absolute;
+  color: rgba(232, 96, 58, 0.35);
+  pointer-events: none;
+  user-select: none;
 }

@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-jakarta",
   display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "Go Off Script — AI Career Companion",
+  title: "go offscript — AI career companion",
   description:
-    "An AI career companion that reads your CV, learns your values, and finds real paths you haven't considered. Built by Cambridge students.",
+    "Upload your CV, chat with Nova, and map real career paths, opportunities, mentors & scholarships. Built for students who want to go off script.",
   openGraph: {
-    title: "Go Off Script — AI Career Companion",
-    description:
-      "Stop following the default path. Nova helps you find the career that actually fits you.",
+    title: "go offscript — AI career companion",
+    description: "bestie, your degree doesn't define you. find paths that actually fit.",
     type: "website",
   },
 };
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={jakarta.variable}>
       <body>{children}</body>
     </html>
   );
