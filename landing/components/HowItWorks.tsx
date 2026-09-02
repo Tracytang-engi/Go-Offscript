@@ -8,18 +8,21 @@ const steps = [
     icon: "📄",
     title: "upload your CV",
     description: "Nova pulls your real skills in seconds — no manual tagging, no vibes-only guesswork.",
+    media: "/how-it-works/step-1-cv.gif",
   },
   {
     number: "2",
     icon: "✦",
     title: "chat with Nova",
     description: "A short convo about values, style & ambitions. Less quiz, more smart bestie energy.",
+    media: "/how-it-works/step2.gif",
   },
   {
     number: "3",
     icon: "🚀",
     title: "get paths + make moves",
     description: "Swipe career paths, then unlock real jobs, events & mentors filtered to what you liked.",
+    media: "/how-it-works/step3.gif",
   },
 ];
 
@@ -55,7 +58,7 @@ export default function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.12 }}
-              className="rounded-3xl p-7 flex flex-col gap-4"
+              className="rounded-3xl p-6 flex flex-col gap-4"
               style={{
                 backgroundColor: "rgba(255,255,255,0.88)",
                 border: "1px solid rgba(232,96,58,0.14)",
@@ -82,6 +85,20 @@ export default function HowItWorks() {
               <p className="text-sm leading-relaxed" style={{ color: "#6B7280" }}>
                 {step.description}
               </p>
+              <div
+                className="mt-1 overflow-hidden rounded-2xl"
+                style={{
+                  border: "1px solid rgba(232,96,58,0.1)",
+                  backgroundColor: "#FAF5EE",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={step.media}
+                  alt={step.title}
+                  className="w-full h-auto block"
+                />
+              </div>
             </motion.div>
           ))}
         </div>
