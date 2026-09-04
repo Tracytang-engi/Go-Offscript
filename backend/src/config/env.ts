@@ -15,5 +15,9 @@ export const env = {
   PERPLEXITY_GROUP_ID: process.env.PERPLEXITY_GROUP_ID ?? '',
   SMTP_USER: process.env.SMTP_USER ?? '',
   SMTP_PASS: process.env.SMTP_PASS ?? '',
+  /** Prefer this on Render — HTTPS API, not blocked like Gmail SMTP */
+  RESEND_API_KEY: process.env.RESEND_API_KEY ?? '',
+  /** e.g. "Go Off Script <noreply@yourdomain.com>" — requires verified domain on Resend */
+  EMAIL_FROM: process.env.EMAIL_FROM ?? '',
   ADMIN_KEY: process.env.ADMIN_KEY ?? 'changeme',
 } as const;

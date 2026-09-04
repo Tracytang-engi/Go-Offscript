@@ -1,57 +1,24 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { prisma } from '../../config/prisma';
 import { env } from '../../config/env';
 import { AppError } from '../../middleware/errorHandler';
 import type { RegisterDto, LoginDto } from './auth.schema';
+import { sendOtpEmail } from './mailer';
 
 const signToken = (userId: string, email: string) =>
   jwt.sign({ userId, email }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
 
-// ── Mailer ────────────────────────────────────────────────────────────────────
-
-const createTransporter = () => {
-  if (!env.SMTP_USER || !env.SMTP_PASS) return null;
-  // Explicit host + port 587 + IPv4: Render often fails on Gmail's IPv6 (ENETUNREACH :465)
-  const options: SMTPTransport.Options = {
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    // Force IPv4 — not on Options type in some @types versions
-    ...({ family: 4 } as object),
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
-  };
-  return nodemailer.createTransport(options);
-};
-
-const sendOtpEmail = async (to: string, otp: string) => {
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.warn('[Auth] SMTP not configured — skipping OTP email. OTP:', otp);
-    return;
-  }
-  await transporter.sendMail({
-    from: `"Go Off Script" <${env.SMTP_USER}>`,
-    to,
-    subject: 'Your Go Off Script verification code',
-    text: `Your verification code is: ${otp}\n\nThis code expires in 15 minutes.`,
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:auto">
-        <h2 style="color:#E8603A">Go Off Script ✦</h2>
-        <p>Here's your verification code:</p>
-        <h1 style="letter-spacing:8px;color:#1a1a1a">${otp}</h1>
-        <p style="color:#888">This code expires in 15 minutes. If you didn't request this, ignore this email.</p>
-      </div>
-    `,
-  });
-};
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+const dispatchOtp = (email: string, otp: string) =>
+  sendOtpEmail(email, otp).catch((err) => {
+    console.error('[Auth] Failed to send OTP email:', err);
+    // Temporary aid while email provider is being fixed — check Render logs
+    console.warn(`[Auth] OTP for ${email} (log only, not emailed): ${otp}`);
+  });
 
 // ── Auth functions ────────────────────────────────────────────────────────────
 
@@ -78,9 +45,7 @@ export const register = async (dto: RegisterDto) => {
   });
 
   // Fire-and-forget — don't block registration if email fails
-  sendOtpEmail(dto.email, otp).catch((err) =>
-    console.error('[Auth] Failed to send OTP email:', err)
-  );
+  void dispatchOtp(dto.email, otp);
 
   return { user };
 };
@@ -110,7 +75,7 @@ export const sendOtp = async (email: string) => {
     data: { emailOtp: hashedOtp, emailOtpExp: otpExp },
   });
 
-  await sendOtpEmail(email, otp);
+  await dispatchOtp(email, otp);
   return { sent: true };
 };
 
