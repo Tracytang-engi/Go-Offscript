@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { prisma } from '../../config/prisma';
 import { env } from '../../config/env';
 import { AppError } from '../../middleware/errorHandler';
@@ -14,14 +15,16 @@ const signToken = (userId: string, email: string) =>
 const createTransporter = () => {
   if (!env.SMTP_USER || !env.SMTP_PASS) return null;
   // Explicit host + port 587 + IPv4: Render often fails on Gmail's IPv6 (ENETUNREACH :465)
-  return nodemailer.createTransport({
+  const options: SMTPTransport.Options = {
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     requireTLS: true,
-    family: 4,
+    // Force IPv4 — not on Options type in some @types versions
+    ...({ family: 4 } as object),
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
-  });
+  };
+  return nodemailer.createTransport(options);
 };
 
 const sendOtpEmail = async (to: string, otp: string) => {
