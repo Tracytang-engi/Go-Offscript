@@ -13,8 +13,13 @@ const signToken = (userId: string, email: string) =>
 
 const createTransporter = () => {
   if (!env.SMTP_USER || !env.SMTP_PASS) return null;
+  // Explicit host + port 587 + IPv4: Render often fails on Gmail's IPv6 (ENETUNREACH :465)
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    family: 4,
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   });
 };
