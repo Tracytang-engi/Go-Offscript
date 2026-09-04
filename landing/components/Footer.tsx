@@ -25,11 +25,14 @@ export default function Footer() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
-          <a href="#" style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, textDecoration: "none" }}>
+          <a href="/privacy" style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, textDecoration: "none" }}>
             Privacy
           </a>
-          <a href="#" style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, textDecoration: "none" }}>
+          <a href="/terms" style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, textDecoration: "none" }}>
             Terms
+          </a>
+          <a href="/support" style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, textDecoration: "none" }}>
+            Support
           </a>
           <a
             href="mailto:gooffscript6@gmail.com"

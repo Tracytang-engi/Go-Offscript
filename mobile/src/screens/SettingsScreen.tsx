@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, Alert, Switch,
+  View, Text, TouchableOpacity, ScrollView, Alert, Switch, Linking,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { useAuthStore } from '../lib/store/auth.store';
 import { useOnboardingStore } from '../lib/store/onboarding.store';
 import { useThemeStore } from '../lib/store/theme.store';
 import { useTheme } from '../lib/useTheme';
+import { LEGAL_LINKS } from '../constants/links';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -23,6 +24,12 @@ export const SettingsScreen = ({ navigation }: Props) => {
 
   const comingSoon = (feature: string) =>
     Alert.alert('Coming Soon', `${feature} is being built for you.`);
+
+  const openUrl = (url: string) => {
+    Linking.openURL(url).catch(() =>
+      Alert.alert('Could not open link', 'Please try again in a browser.')
+    );
+  };
 
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -221,9 +228,13 @@ export const SettingsScreen = ({ navigation }: Props) => {
         <SectionHeader title="About" />
         <View style={{ borderRadius: 14, overflow: 'hidden', marginHorizontal: 20 }}>
           <SettingRow label="version" rightLabel="1.0.0" />
-          <SettingRow label="terms & conditions" onPress={() => comingSoon('Terms & Conditions')} />
-          <SettingRow label="privacy policy" onPress={() => comingSoon('Privacy Policy')} />
-          <SettingRow label="contact us" subtitle="hello@gooffscript.com" onPress={() => comingSoon('Contact')} />
+          <SettingRow label="terms & conditions" onPress={() => openUrl(LEGAL_LINKS.terms)} />
+          <SettingRow label="privacy policy" onPress={() => openUrl(LEGAL_LINKS.privacy)} />
+          <SettingRow
+            label="contact us"
+            subtitle={LEGAL_LINKS.contactEmail}
+            onPress={() => openUrl(LEGAL_LINKS.support)}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
