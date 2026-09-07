@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   size?: "default" | "large";
   variant?: "onOrange" | "onWhite" | "onLight";
+}
+
+function readCount(payload: unknown): number | null {
+  if (!payload || typeof payload !== "object") return null;
+  const d = payload as { data?: { count?: unknown }; count?: unknown };
+  const n = d.data?.count ?? d.count;
+  return typeof n === "number" ? n : null;
 }
 
 export default function WaitlistForm({ size = "default", variant = "onLight" }: Props) {
@@ -14,12 +21,20 @@ export default function WaitlistForm({ size = "default", variant = "onLight" }: 
   const [errorMsg, setErrorMsg] = useState("");
   const [count, setCount] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetch("/api/waitlist?count=1")
-      .then((r) => r.json())
-      .then((d) => { if (typeof d.count === "number") setCount(d.count); })
-      .catch(() => {});
+  const refreshCount = useCallback(async () => {
+    try {
+      const r = await fetch("/api/waitlist?count=1", { cache: "no-store" });
+      const d = await r.json();
+      const n = readCount(d);
+      if (n !== null) setCount(n);
+    } catch {
+      // keep previous count
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshCount();
+  }, [refreshCount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,16 +48,31 @@ export default function WaitlistForm({ size = "default", variant = "onLight" }: 
         body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
+
+      // Already registered — treat as success so users aren't scared off
+      if (res.status === 409) {
+        setStatus("success");
+        void refreshCount();
+        return;
+      }
+
       if (res.ok && data.success) {
         setStatus("success");
-        setCount((c) => (c !== null ? c + 1 : null));
-      } else {
-        setStatus("error");
-        setErrorMsg(data.error ?? "Something went wrong. Try again.");
+        void refreshCount();
+        return;
       }
+
+      setStatus("error");
+      setErrorMsg(
+        data.message ??
+          data.error ??
+          (res.status >= 500
+            ? "server is waking up — wait a few seconds and try again"
+            : "Something went wrong. Try again.")
+      );
     } catch {
       setStatus("error");
-      setErrorMsg("Network error. Please try again.");
+      setErrorMsg("network error — if this is the first visit in a while, wait 20s and try again");
     }
   };
 
