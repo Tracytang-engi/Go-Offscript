@@ -8,6 +8,9 @@ interface Props {
   variant?: "onOrange" | "onWhite" | "onLight";
 }
 
+/** Other-channel signups already collected; landing waitlist adds on top. */
+const WAITLIST_BASELINE = 500;
+
 function readCount(payload: unknown): number | null {
   if (!payload || typeof payload !== "object") return null;
   const d = payload as { data?: { count?: unknown }; count?: unknown };
@@ -26,9 +29,9 @@ export default function WaitlistForm({ size = "default", variant = "onLight" }: 
       const r = await fetch("/api/waitlist?count=1", { cache: "no-store" });
       const d = await r.json();
       const n = readCount(d);
-      if (n !== null) setCount(n);
+      setCount(WAITLIST_BASELINE + (n ?? 0));
     } catch {
-      // keep previous count
+      setCount((c) => c ?? WAITLIST_BASELINE);
     }
   }, []);
 
@@ -187,8 +190,6 @@ export default function WaitlistForm({ size = "default", variant = "onLight" }: 
           <p style={{ fontSize: 12, color: onOrange ? "rgba(255,255,255,0.65)" : "#8A93A3" }}>
             {count === null
               ? "loading waitlist..."
-              : count === 0
-              ? "be the first on the waitlist!"
               : `${count.toLocaleString()} ${count === 1 ? "person" : "people"} already joined`}
           </p>
         )}
