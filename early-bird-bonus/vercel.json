@@ -1,1 +1,1 @@
-{ "framework": "nextjs", "buildCommand": "npm run build", "installCommand": "npm ci", "outputDirectory": ".next" }
+{ "framework": "nextjs", "buildCommand": "npm run build", "installCommand": "npm ci --prefix ../early-bird-api && npm ci", "outputDirectory": ".next" }

@@ -7,7 +7,7 @@ An independent orange-led candy-colour campaign page for Go Offscript, with the 
 - Import `Tracytang-engi/Go-Offscript` as a **new project** named `go-offscript-early-bird-bonus`.
 - Root directory: `early-bird-bonus`.
 - Enable **Include source files outside of the Root Directory in the Build Step**, because the local dependency `@go-offscript/early-bird-api` shares storage and validation with the sibling Render backend.
-- Install `npm ci`; build `npm run build`; Next.js framework preset.
+- Install `npm ci --prefix ../early-bird-api && npm ci`; build `npm run build`; Next.js framework preset. The sibling package is linked by npm, so its dependencies must also be installed in its own directory. These commands are configured in `vercel.json`.
 - Set server-only `DATABASE_URL` (external PostgreSQL connection), `CLAIM_PROXY_SECRET` (same as Render) and `EARLY_BIRD_BACKEND_URL` (the new Render service URL).
 - The database must be reachable from both Vercel and Render. Verify provider access rules and TLS. All claim requests fail closed when no database is configured.
 
