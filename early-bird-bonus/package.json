@@ -1,0 +1,8 @@
+{
+  "name": "go-offscript-early-bird-bonus",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "next dev --port 3002", "build": "next build", "start": "next start --port 3002", "typecheck": "tsc --noEmit", "test": "node --test test/*.test.mjs" },
+  "dependencies": { "@go-offscript/early-bird-api": "file:../early-bird-api", "next": "16.3.1", "react": "19.2.8", "react-dom": "19.2.8", "pg": "^8.20.0" },
+  "devDependencies": { "@types/node": "^20", "@types/react": "^19", "@types/react-dom": "^19", "typescript": "^5" }
+}

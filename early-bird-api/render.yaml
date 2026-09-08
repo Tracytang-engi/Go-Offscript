@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: go-offscript-early-bird-api
+    runtime: node
+    rootDir: early-bird-api
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CLAIM_PROXY_SECRET
+        sync: false
+      - key: ADMIN_KEY
+        sync: false
