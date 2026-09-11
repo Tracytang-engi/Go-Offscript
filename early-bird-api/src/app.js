@@ -9,7 +9,7 @@ function matches(actual, expected) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function createApp({ save = saveClaim, ready = ensureSchema } = {}) {
+export function createApp({ save = saveClaim, ready = ensureSchema, basePath = '/api/claims' } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '2kb' }));
@@ -18,7 +18,7 @@ export function createApp({ save = saveClaim, ready = ensureSchema } = {}) {
     try { await ready(); res.json({ status: 'ok' }); }
     catch { res.status(503).json({ status: 'unavailable' }); }
   });
-  app.post('/api/claims', async (req, res) => {
+  app.post(basePath || '/', async (req, res) => {
     if (!matches(req.headers['x-claim-secret'], process.env.CLAIM_PROXY_SECRET)) return res.sendStatus(403);
     try {
       const { email } = validateClaim(req.body);
@@ -32,7 +32,7 @@ export function createApp({ save = saveClaim, ready = ensureSchema } = {}) {
       return res.status(503).json({ success: false, message: 'Your voucher has not been confirmed yet. Please try again.' });
     }
   });
-  app.get('/api/claims/export', async (req, res) => {
+  app.get(`${basePath}/export`, async (req, res) => {
     if (!matches(req.headers['x-admin-key'], process.env.ADMIN_KEY)) return res.sendStatus(403);
     try {
       await ready();

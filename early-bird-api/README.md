@@ -1,5 +1,7 @@
 # Early Bird Bonus API
 
+The recommended deployment now mounts this shared code in the existing `backend` service. Follow [the integration guide](../backend/EARLY_BIRD.md); no additional Render service is required. The standalone instructions below remain an optional alternative.
+
 Independent Render service for the Early Bird Bonus campaign. Original `backend` and `landing` remain separate. This API and the Vercel fallback share `src/storage.js`, one PostgreSQL database, and the `early_bird_claims` table.
 
 ## Production setup

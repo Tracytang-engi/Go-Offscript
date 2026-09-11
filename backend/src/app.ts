@@ -17,10 +17,16 @@ import mentorRoutes from './modules/mentor/mentor.routes';
 import waitlistRoutes from './modules/waitlist/waitlist.routes';
 
 const app = express();
+// Built from the same source as the Vercel database fallback.
+const { createApp: createEarlyBirdApp } = require('../generated/early-bird/app.js') as {
+  createApp: (options: { basePath: string }) => express.Express;
+};
 
 app.use(helmet());
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }));
 app.use(morgan(process.env['NODE_ENV'] === 'production' ? 'combined' : 'dev'));
+// Mount before the global JSON parser to retain the campaign's 2 KB limit.
+app.use('/api/claims', createEarlyBirdApp({ basePath: '' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

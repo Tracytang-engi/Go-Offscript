@@ -12,6 +12,8 @@ services:
         sync: false          # set manually in Render dashboard
       - key: JWT_SECRET
         sync: false
+      - key: CLAIM_PROXY_SECRET
+        sync: false
       - key: PERPLEXITY_API_KEY
         sync: false
       - key: PERPLEXITY_GROUP_ID
