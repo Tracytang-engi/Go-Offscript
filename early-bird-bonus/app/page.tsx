@@ -97,7 +97,9 @@ export default function Home() {
               {status === 'success' && claim ? <div className="success" ref={successRef} tabIndex={-1}>
                 <Confetti /><span className="success-check" aria-hidden="true">✓</span><p className="mini-label">YOU&apos;RE IN. THIS ONE&apos;S YOURS.</p><h2>congratulations!</h2><p>Your email is saved and your extra tokens voucher is reserved.</p>
                 <div className="voucher-code"><small>YOUR VOUCHER CODE</small><code>{claim.voucherCode}</code><button type="button" onClick={copyVoucher}>{copied ? 'copied ✓' : 'copy my code ↗'}</button></div>
-                <p className="fine-print">Keep this code. We&apos;ll contact you at <strong>{email.trim()}</strong> with the token amount and redemption details when access opens.</p><p role="status" className="status-text">{notice || (copied ? 'Voucher code copied.' : '')}</p>
+                <p className="fine-print">Keep this code. We&apos;ll contact you at <strong>{email.trim()}</strong> with the token amount and redemption details when access opens.</p>
+                <p className="fine-print voucher-hint">Forgot your voucher code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your voucher automatically.</p>
+                <p role="status" className="status-text">{notice || (copied ? 'Voucher code copied.' : '')}</p>
               </div> : <form onSubmit={submit}>
                 <h3>let&apos;s make it yours.</h3><p>Use the email you joined the waitlist with.</p>
                 <label htmlFor="email">Your email</label>
@@ -107,6 +109,7 @@ export default function Home() {
                 <button className="claim-button" type="submit" disabled={status==='loading'}>{status==='loading' ? <><span className="spinner" /> securing your bonus…</> : <>claim my extra tokens <span>↗</span></>}</button>
                 <p id="claim-status" role={status==='error'?'alert':'status'} className={`status-text ${status==='error'?'error':''}`}>{notice}</p>
                 <p className="fine-print centered">Already confirmed? Submit again to retrieve your voucher.<br />One voucher per email. No payment required.</p>
+                <p className="fine-print centered voucher-hint">Forgot your voucher code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your voucher automatically.</p>
               </form>}
             </div>
             <div className="ticket-bottom"><span>YOUR FUTURE ISN&apos;T ONE-SIZE-FITS-ALL.</span><div className="barcode" aria-hidden="true" /></div>
