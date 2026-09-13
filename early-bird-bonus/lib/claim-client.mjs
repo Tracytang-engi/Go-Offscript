@@ -17,9 +17,9 @@ export async function claimVoucher(payload, update = () => {}, { fetchImpl = fet
         error.noRetry = true;
         throw error;
       }
-      throw new Error('Your voucher has not been confirmed yet. Your email is still in the form — please try again.');
+      throw new Error('Your free trial reservation has not been confirmed yet. Your email is still in the form — please try again.');
     } catch (error) {
-      if (error.noRetry || attempt === 2) throw error.name === 'TimeoutError' || error instanceof TypeError ? new Error('We could not confirm your voucher. Your email is still in the form — please try again.') : error;
+      if (error.noRetry || attempt === 2) throw error.name === 'TimeoutError' || error instanceof TypeError ? new Error('We could not confirm your free trial reservation. Your email is still in the form — please try again.') : error;
       update('Still saving your spot. We are safely retrying — keep this page open.');
       await sleep((attempt + 1) * 1500);
     }

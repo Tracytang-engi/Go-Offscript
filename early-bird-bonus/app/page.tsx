@@ -36,7 +36,7 @@ export default function Home() {
 
   useEffect(() => {
     // Restore only the pending address, never infer success from browser storage.
-    try { const pending = sessionStorage.getItem('gos-bonus-pending'); if (pending) { setEmail(pending); setNotice('Welcome back. Confirm your email to finish claiming your voucher.'); } } catch {}
+    try { const pending = sessionStorage.getItem('gos-bonus-pending'); if (pending) { setEmail(pending); setNotice('Welcome back. Confirm your email to finish reserving your 1 week free trial.'); } } catch {}
     const observer = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); } }), { threshold: .08 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     document.documentElement.classList.add('has-motion');
@@ -58,63 +58,60 @@ export default function Home() {
       setClaim(result); setStatus('success'); setNotice('');
       try { sessionStorage.removeItem('gos-bonus-pending'); } catch {}
     } catch (error) {
-      setStatus('error'); setNotice(error instanceof Error ? error.message : 'We could not confirm your voucher. Please try again.');
+      setStatus('error'); setNotice(error instanceof Error ? error.message : 'We could not confirm your free trial reservation. Please try again.');
     } finally { locked.current = false; }
   }
 
   async function copyVoucher() {
     if (!claim) return;
     try { await navigator.clipboard.writeText(claim.voucherCode); setCopied(true); }
-    catch { setNotice('Select the voucher code above to copy it.'); }
+    catch { setNotice('Select the reservation code above to copy it.'); }
   }
 
   return <main className={motionPaused ? 'motion-paused' : ''}>
-    <a className="skip-link" href="#claim">Skip to claim your voucher</a>
+    <a className="skip-link" href="#claim">Skip to reserve your free trial</a>
     <nav className="nav" aria-label="Main navigation">
       <a className="brand" href={original}>go <span>offscript</span><b>✳</b></a>
       <div className="nav-links"><a href="#how-it-works">how it works</a><a href="#features">the good stuff</a></div>
-      <a className="nav-cta" href="#claim">get my bonus <span>↗</span></a>
+      <a className="nav-cta" href="#claim">get my free trial <span>↗</span></a>
     </nav>
 
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero-inner">
         <div className="hero-copy">
           <div className="eyebrow"><span className="live-dot" /> a little thank-you for being early</div>
-          <h1 id="hero-title">your next chapter.<br /><span>now with</span><br /><em>a little extra.</em><span className="headline-star" aria-hidden="true">✳</span></h1>
-          <p className="intro">Same offscript energy. An extra perk for you.</p>
-          <p className="hero-description">Already joined our waitlist? Your early-bird perks just got sweeter. Confirm your email to claim an extra tokens voucher for when Go Offscript opens.</p>
-          <div className="hero-chips"><span>✦ more possibilities</span><span>↗ your own direction</span><span>♡ a thank-you from us</span></div>
+          <h1 id="hero-title">your next chapter.<br /><span>1 week</span><br /><em>free trial.</em><span className="headline-star" aria-hidden="true">✳</span></h1>
+          <p className="intro">Same offscript energy. A whole week to explore.</p>
+          <p className="hero-description">Your early-bird perk: 1 week free trial. Leave your email to reserve a week with Go Offscript when the app launches.</p>
+          <div className="hero-chips"><span>✦ 1 week free trial</span><span>↗ your own direction</span><span>♡ a thank-you from us</span></div>
           <div className="nova-note"><span className="nova-icon">✦</span><p><strong>bestie, your degree doesn&apos;t define you.</strong><br />let&apos;s find what does. — Nova</p></div>
         </div>
 
         <div className="claim-wrap" id="claim">
-          <span className="bonus-sticker" aria-hidden="true">a little<br /><b>EXTRA</b><br />for you ↗</span>
+          <span className="bonus-sticker" aria-hidden="true">your first<br /><b>WEEK</b><br />on us ↗</span>
           <div className="ticket">
-            <div className="ticket-top"><span>GO OFFSCRIPT PERKS</span><span>✳</span></div>
-            <div className="ticket-offer"><span className="mini-label">THE EARLY BIRD BONUS</span><h2>extra tokens.<br /><i>extra possibilities.</i></h2><p>Your next move comes with a little more room to explore.</p><span className="ticket-pill">✦ your extra tokens voucher</span></div>
+            <div className="ticket-top"><span>GO OFFSCRIPT FREE TRIAL</span><span>✳</span></div>
+            <div className="ticket-offer"><span className="mini-label">YOUR EARLY BIRD OFFER</span><h2>1 week<br /><i>free trial.</i></h2><p>A week to explore your next chapter with Nova.</p><span className="ticket-pill">✦ 1 week free trial</span></div>
             <div className="ticket-divider" aria-hidden="true"><span /><b /><span /></div>
             <div className="ticket-form">
               {status === 'success' && claim ? <div className="success" ref={successRef} tabIndex={-1}>
-                <Confetti /><span className="success-check" aria-hidden="true">✓</span><p className="mini-label">YOU&apos;RE IN. THIS ONE&apos;S YOURS.</p><h2>congratulations!</h2><p>Your email is saved and your extra tokens voucher is reserved.</p>
-                <div className="voucher-code"><small>YOUR VOUCHER CODE</small><code>{claim.voucherCode}</code><button type="button" onClick={copyVoucher}>{copied ? 'copied ✓' : 'copy my code ↗'}</button></div>
-                <p className="fine-print">Keep this code. We&apos;ll contact you at <strong>{email.trim()}</strong> with the token amount and redemption details when access opens.</p>
-                <p className="fine-print voucher-hint">Forgot your voucher code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your voucher automatically.</p>
-                <p role="status" className="status-text">{notice || (copied ? 'Voucher code copied.' : '')}</p>
+                <Confetti /><span className="success-check" aria-hidden="true">✓</span><p className="mini-label">YOU&apos;RE IN. THIS ONE&apos;S YOURS.</p><h2>congratulations!</h2><p>Your email is saved and your 1 week free trial is reserved for launch.</p>
+                <div className="voucher-code"><small>YOUR RESERVATION CODE</small><code>{claim.voucherCode}</code><button type="button" onClick={copyVoucher}>{copied ? 'copied ✓' : 'copy my code ↗'}</button></div>
+                <p className="fine-print">Keep this code and use <strong>{email.trim()}</strong> when you sign up at launch. Trial activation details will be announced when the app opens.</p><p className="fine-print voucher-hint">Forgot your reservation code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your free trial reservation automatically.</p><p role="status" className="status-text">{notice || (copied ? 'Reservation code copied.' : '')}</p>
               </div> : <form onSubmit={submit}>
-                <h3>let&apos;s make it yours.</h3><p>Use the email you joined the waitlist with.</p>
+                <h3>let&apos;s make it yours.</h3><p>Leave your email to reserve your 1 week free trial.</p>
                 <label htmlFor="email">Your email</label>
                 <input id="email" name="email" type="email" autoComplete="email" inputMode="email" required maxLength={254} placeholder="you@your-next-chapter.com" value={email} onChange={e=>setEmail(e.target.value)} disabled={status==='loading'} aria-describedby="claim-status" />
                 <div className="honeypot" aria-hidden="true"><label htmlFor="website">Leave this empty</label><input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" /></div>
-                <label className="consent"><input name="consent" type="checkbox" required checked={consent} onInvalid={e=>e.currentTarget.setCustomValidity('Please check this box to continue.')} onChange={e=>{ e.currentTarget.setCustomValidity(''); setConsent(e.target.checked); }} disabled={status==='loading'} /><span>Email me my voucher details and Go Offscript early-access updates. <a href="#privacy">Privacy details</a></span></label>
-                <button className="claim-button" type="submit" disabled={status==='loading'}>{status==='loading' ? <><span className="spinner" /> securing your bonus…</> : <>claim my extra tokens <span>↗</span></>}</button>
+                <label className="consent"><input name="consent" type="checkbox" required checked={consent} onInvalid={e=>e.currentTarget.setCustomValidity('Please check this box to continue.')} onChange={e=>{ e.currentTarget.setCustomValidity(''); setConsent(e.target.checked); }} disabled={status==='loading'} /><span>Email me free trial details and Go Offscript launch updates. <a href="#privacy">Privacy details</a></span></label>
+                <button className="claim-button" type="submit" disabled={status==='loading'}>{status==='loading' ? <><span className="spinner" /> reserving your free trial…</> : <>reserve my free trial <span>↗</span></>}</button>
                 <p id="claim-status" role={status==='error'?'alert':'status'} className={`status-text ${status==='error'?'error':''}`}>{notice}</p>
-                <p className="fine-print centered">Already confirmed? Submit again to retrieve your voucher.<br />One voucher per email. No payment required.</p>
-                <p className="fine-print centered voucher-hint">Forgot your voucher code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your voucher automatically.</p>
+                <p className="fine-print centered">Already reserved? Submit again to retrieve your code.<br />One free trial per email. No payment required to reserve.</p><p className="fine-print centered voucher-hint">Forgot your reservation code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your free trial reservation automatically.</p>
               </form>}
             </div>
             <div className="ticket-bottom"><span>YOUR FUTURE ISN&apos;T ONE-SIZE-FITS-ALL.</span><div className="barcode" aria-hidden="true" /></div>
           </div>
-          <p className="offer-note">Extra tokens are in addition to your original early-access offer.<br />Amount and redemption details will be announced at launch.</p>
+          <p className="offer-note">Reserve your 1 week free trial for launch.<br />Activation details will be announced when the app opens.</p>
         </div>
       </div>
       <div className="hero-foot"><span>BIG POSSIBILITIES. ZERO DEFAULT SCRIPT.</span><a href="#how-it-works">meet your next chapter ↓</a></div>
@@ -132,8 +129,8 @@ export default function Home() {
       <div className="features">{features.map(([icon,title,description,tag],i)=><article className={`feature reveal color-${i%3}`} key={title}><div className="feature-top"><span className="feature-icon" aria-hidden="true">{icon}</span><span className="feature-tag">{tag}</span></div><h3>{title}</h3><p>{description}</p></article>)}</div>
     </div></section>
 
-    <section className="final-cta section reveal"><span className="final-star" aria-hidden="true">✳</span><p className="eyebrow">YOU WERE EARLY. WE NOTICED.</p><h2>your future called.<br /><em>there&apos;s a bonus.</em></h2><p>More room to explore. More ways to go offscript.</p><a href="#claim" className="dark-button">claim my extra tokens ↗</a></section>
-    <section className="privacy-note section" id="privacy"><h2>your email, thoughtfully handled.</h2><p>We save your email, voucher code, consent and claim time to reserve your bonus and send early-access updates. Your voucher is linked to this email; keep access to it for redemption. A pending email stays in this browser tab only until your claim succeeds or the tab closes. To request deletion or stop updates, visit <a href={`${original}/support`}>support</a>. See our <a href={`${original}/privacy`}>Privacy Policy</a> and <a href={`${original}/terms`}>Terms</a>.</p></section>
+    <section className="final-cta section reveal"><span className="final-star" aria-hidden="true">✳</span><p className="eyebrow">YOUR FIRST WEEK STARTS HERE.</p><h2>your next chapter.<br /><em>1 week free trial.</em></h2><p>One week to explore. Your own way to go offscript.</p><a href="#claim" className="dark-button">reserve my free trial ↗</a></section>
+    <section className="privacy-note section" id="privacy"><h2>your email, thoughtfully handled.</h2><p>We save your email, reservation code, consent and reservation time to reserve your 1 week free trial and send launch updates. Your reservation is linked to this email; keep access to it for activation. A pending email stays in this browser tab only until your claim succeeds or the tab closes. To request deletion or stop updates, visit <a href={`${original}/support`}>support</a>. See our <a href={`${original}/privacy`}>Privacy Policy</a> and <a href={`${original}/terms`}>Terms</a>.</p></section>
     <footer className="footer"><a className="brand" href={original}>go <span>offscript</span><b>✳</b></a><p>your life. your script.</p><div><button type="button" onClick={()=>setMotionPaused(!motionPaused)}>{motionPaused ? 'play animations' : 'pause animations'}</button><a href={`${original}/support`}>say hello ↗</a></div></footer>
   </main>;
 }
