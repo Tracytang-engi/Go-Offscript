@@ -32,6 +32,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [motionPaused, setMotionPaused] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const locked = useRef(false);
 
   useEffect(() => {
@@ -43,7 +44,14 @@ export default function Home() {
     return () => { observer.disconnect(); document.documentElement.classList.remove('has-motion'); };
   }, []);
 
-  useEffect(() => { if (status === 'success') successRef.current?.focus(); }, [status]);
+  useEffect(() => {
+    if (status === 'success') successRef.current?.focus();
+    if (status === 'error') {
+      errorRef.current?.focus({ preventScroll: true });
+      const reduceMotion = motionPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      errorRef.current?.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'instant' : 'smooth' });
+    }
+  }, [status, motionPaused]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,7 +59,7 @@ export default function Home() {
     locked.current = true;
     const form = new FormData(event.currentTarget);
     const submitted = email.trim();
-    setStatus('loading'); setNotice('Saving your spot…');
+    setStatus('loading'); setNotice('Saving your reservation. Please keep this page open until it is confirmed.');
     try { sessionStorage.setItem('gos-bonus-pending', submitted); } catch {}
     try {
       const result = await claimVoucher({ email: submitted, consent, website: String(form.get('website') || '') }, (message: string) => setNotice(message));
@@ -102,10 +110,13 @@ export default function Home() {
                 <h3>let&apos;s make it yours.</h3><p>Leave your email to reserve your 1 week free trial.</p>
                 <label htmlFor="email">Your email</label>
                 <input id="email" name="email" type="email" autoComplete="email" inputMode="email" required maxLength={254} placeholder="you@your-next-chapter.com" value={email} onChange={e=>setEmail(e.target.value)} disabled={status==='loading'} aria-describedby="claim-status" />
+                {status === 'error' ? <div id="claim-status" className="email-save-alert" role="alert" aria-labelledby="save-error-title" ref={errorRef} tabIndex={-1}>
+                  <span className="email-save-alert-icon" aria-hidden="true">!</span>
+                  <div><h4 id="save-error-title">Your reservation is not confirmed yet</h4><p>We couldn&apos;t confirm that your email was saved. Your free trial reservation is not complete until you see confirmation.</p><p className="email-save-alert-detail">{notice}</p><p>Your email is still here. You can safely try again.</p><button type="submit" className="email-save-retry">Try again <span aria-hidden="true">↻</span></button></div>
+                </div> : <p id="claim-status" role="status" className={`status-text email-save-status ${status === 'loading' ? 'saving' : ''}`}>{status === 'loading' && <span className="spinner" aria-hidden="true" />}{notice}</p>}
                 <div className="honeypot" aria-hidden="true"><label htmlFor="website">Leave this empty</label><input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" /></div>
-                <label className="consent"><input name="consent" type="checkbox" required checked={consent} onInvalid={e=>e.currentTarget.setCustomValidity('Please check this box to continue.')} onChange={e=>{ e.currentTarget.setCustomValidity(''); setConsent(e.target.checked); }} disabled={status==='loading'} /><span>Email me free trial details and Go Offscript launch updates. <a href="#privacy">Privacy details</a></span></label>
+                <label className="consent"><input name="consent" type="checkbox" required checked={consent} onInvalid={e=>e.currentTarget.setCustomValidity('Please check this box to continue.')} onChange={e=>{ e.currentTarget.setCustomValidity(''); setConsent(e.target.checked); }} disabled={status==='loading'} /><span>Email me my free trial details after the Go Offscript app launches. <a href="#privacy">Privacy details</a></span></label>
                 <button className="claim-button" type="submit" disabled={status==='loading'}>{status==='loading' ? <><span className="spinner" /> reserving your free trial…</> : <>reserve my free trial <span>↗</span></>}</button>
-                <p id="claim-status" role={status==='error'?'alert':'status'} className={`status-text ${status==='error'?'error':''}`}>{notice}</p>
                 <p className="fine-print centered">Already reserved? Submit again to retrieve your code.<br />One free trial per email. No payment required to reserve.</p><p className="fine-print centered voucher-hint">Forgot your reservation code? No worries. Enter your email again here to see your existing code, or when the app launches, sign up with the email you registered on this page — we&apos;ll fill in your free trial reservation automatically.</p>
               </form>}
             </div>
@@ -130,7 +141,7 @@ export default function Home() {
     </div></section>
 
     <section className="final-cta section reveal"><span className="final-star" aria-hidden="true">✳</span><p className="eyebrow">YOUR FIRST WEEK STARTS HERE.</p><h2>your next chapter.<br /><em>1 week free trial.</em></h2><p>One week to explore. Your own way to go offscript.</p><a href="#claim" className="dark-button">reserve my free trial ↗</a></section>
-    <section className="privacy-note section" id="privacy"><h2>your email, thoughtfully handled.</h2><p>We save your email, reservation code, consent and reservation time to reserve your 1 week free trial and send launch updates. Your reservation is linked to this email; keep access to it for activation. A pending email stays in this browser tab only until your claim succeeds or the tab closes. To request deletion or stop updates, visit <a href={`${original}/support`}>support</a>. See our <a href={`${original}/privacy`}>Privacy Policy</a> and <a href={`${original}/terms`}>Terms</a>.</p></section>
+    <section className="privacy-note section" id="privacy"><h2>your email, thoughtfully handled.</h2><p>We save your email, reservation code, consent and reservation time to reserve your 1 week free trial and email your trial details after the app launches. Your reservation is linked to this email; keep access to it for activation. A pending email stays in this browser tab only until your claim succeeds or the tab closes. To request deletion or stop updates, visit <a href={`${original}/support`}>support</a>. See our <a href={`${original}/privacy`}>Privacy Policy</a> and <a href={`${original}/terms`}>Terms</a>.</p></section>
     <footer className="footer"><a className="brand" href={original}>go <span>offscript</span><b>✳</b></a><p>your life. your script.</p><div><button type="button" onClick={()=>setMotionPaused(!motionPaused)}>{motionPaused ? 'play animations' : 'pause animations'}</button><a href={`${original}/support`}>say hello ↗</a></div></footer>
   </main>;
 }
