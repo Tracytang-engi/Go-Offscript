@@ -34,25 +34,34 @@ export const sendOtpEmail = async (to: string, otp: string) => {
     return;
   }
 
-  console.warn('[Auth] No email provider configured — OTP (dev only):', otp);
+  throw new Error('No email delivery provider is configured');
 };
 
 const sendViaResend = async (to: string, otp: string) => {
   const from = env.EMAIL_FROM || 'Go Off Script <onboarding@resend.dev>';
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject: OTP_SUBJECT,
-      html: otpHtml(otp),
-      text: otpText(otp),
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  let res: Response;
+
+  try {
+    res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: OTP_SUBJECT,
+        html: otpHtml(otp),
+        text: otpText(otp),
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const body = await res.text();
@@ -74,12 +83,15 @@ const sendViaSmtp = async (to: string, otp: string) => {
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   };
   const transporter = nodemailer.createTransport(options);
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: `"Go Off Script" <${env.SMTP_USER}>`,
     to,
     subject: OTP_SUBJECT,
     text: otpText(otp),
     html: otpHtml(otp),
   });
+  if (!info.accepted?.length) {
+    throw new Error('SMTP provider did not accept the recipient');
+  }
   console.log(`[Auth] OTP email sent via SMTP to ${to}`);
 };

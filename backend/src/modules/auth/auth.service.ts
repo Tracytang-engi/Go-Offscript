@@ -13,12 +13,14 @@ const signToken = (userId: string, email: string) =>
 
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-const dispatchOtp = (email: string, otp: string) =>
-  sendOtpEmail(email, otp).catch((err) => {
+const dispatchOtp = async (email: string, otp: string) => {
+  try {
+    await sendOtpEmail(email, otp);
+  } catch (err) {
     console.error('[Auth] Failed to send OTP email:', err);
-    // Temporary aid while email provider is being fixed — check Render logs
-    console.warn(`[Auth] OTP for ${email} (log only, not emailed): ${otp}`);
-  });
+    throw new AppError('We could not send the verification email. Please try again.', 503);
+  }
+};
 
 // ── Auth functions ────────────────────────────────────────────────────────────
 
@@ -44,8 +46,18 @@ export const register = async (dto: RegisterDto) => {
     select: { id: true, name: true, email: true, createdAt: true },
   });
 
-  // Fire-and-forget — don't block registration if email fails
-  void dispatchOtp(dto.email, otp);
+  try {
+    await dispatchOtp(dto.email, otp);
+  } catch (err) {
+    // The app only moves to verification after a successful response. Remove the
+    // just-created, unverified account so the same address can retry registration.
+    try {
+      await prisma.user.delete({ where: { id: user.id } });
+    } catch (cleanupErr) {
+      console.error('[Auth] Failed to clean up account after OTP delivery failure:', cleanupErr);
+    }
+    throw err;
+  }
 
   return { user };
 };
@@ -70,12 +82,28 @@ export const sendOtp = async (email: string) => {
   const hashedOtp = await bcrypt.hash(otp, 10);
   const otpExp = new Date(Date.now() + 15 * 60 * 1000);
 
+  const previousOtp = user.emailOtp;
+  const previousOtpExp = user.emailOtpExp;
+
   await prisma.user.update({
     where: { email },
     data: { emailOtp: hashedOtp, emailOtpExp: otpExp },
   });
 
-  await dispatchOtp(email, otp);
+  try {
+    await dispatchOtp(email, otp);
+  } catch (err) {
+    // A failed resend must not invalidate a code that may already be in flight.
+    try {
+      await prisma.user.update({
+        where: { email },
+        data: { emailOtp: previousOtp, emailOtpExp: previousOtpExp },
+      });
+    } catch (rollbackErr) {
+      console.error('[Auth] Failed to restore OTP after delivery failure:', rollbackErr);
+    }
+    throw err;
+  }
   return { sent: true };
 };
 
