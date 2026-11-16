@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.go-offscript.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Go Off Script needs access to your photo library so you can upload social screenshots for Nova to analyze your interests.",
         "ITSAppUsesNonExemptEncryption": false
